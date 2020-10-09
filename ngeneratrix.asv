@@ -2,7 +2,7 @@ function [j1g j2g] = ngeneratrix(j1,j2,vertexes,n,R)
 %% Comment
 % 得到距离障碍平面最近的母线，如果投影全部在障碍平面之外则返回一定数量的母线，否则返回一条
 % j1,j2 连杆两端点
-% vertexes 障碍平面顶点,需要按照顺时针或者逆时针给出
+% vertexes 障碍平面顶点
 % n 返回母线的数量
 % R 连杆的半径
 %% Body
@@ -26,7 +26,7 @@ else
             h*rx*ry+rz*s c+h*ry^2 h*ry*rz-rx*s;
             h*rx*rz-ry*s h*ry*rz+rx*s c+h*rz^2];
         j1g(i,:) = j1+R*rot*d;
-        j2g(i,:) = j2+R*rot*d;
+        j2g(i,:) = 
     end
 end
 end
