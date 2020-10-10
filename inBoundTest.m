@@ -1,7 +1,7 @@
 %% Comments
 % 测试inBound算法正确性 https://www.cnblogs.com/tiandsp/p/4019880.html
 %% Body
-clear all;
+clear;
 clc;
 close all;
 
@@ -16,8 +16,7 @@ plot(poly([1,size(poly,1)],1),poly([1,size(poly,1)],2),'b');
 pn=500;
 p=rand(pn,2);
 for i=1:pn
-    plot(p(i,1),p(i,2),'r.');
-    flag=0;
+%     plot(p(i,1),p(i,2),'r.');
 %     for j=2:polyn
 %         x1=poly(j-1,1);         %多边形前后两个点
 %         y1=poly(j-1,2);

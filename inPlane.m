@@ -4,9 +4,8 @@ function [inPlane] = inPlane(o,vertexes)
 % o 向量
 % vertexes 顶点，按顺时针组成一个平面
 %% Body
-o=o(:);
-[a b c d] = gplane(vertexes(1),vertexes(2),vertexes(3));
-if [a b c d]*[o;1]==0
+[a,b,c,d] = gplane(vertexes(1),vertexes(2),vertexes(3));
+if [o(:)' 1]*[a;b;c;d] == 0
     inPlane = true;
 else
     inPlane = false;
