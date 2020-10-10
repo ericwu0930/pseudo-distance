@@ -13,6 +13,8 @@ if inPlane(j1,j2,vertexes) == 1
     j1g = j1+R*d;
     j2g = j2+R*d;
 else
+    j1g=zeros(n,3);
+    j2g=zeros(n,3);
     phi = linspace(-pi/2,pi/2,n); % 在角度范围内平均取n个值
     c=cos(phi);
     s=sin(phi);
@@ -32,7 +34,7 @@ end
 end
 
 function [d]=gd(j1,j2,n)
-%% Comment
+%% Comments
 % 得到中心线向障碍平面投影方向的向量d
 %% Body
 j1=j1(:);
@@ -51,9 +53,9 @@ d = A\b;
 d = d/norm(d);
 end
 
-function [inPlane] = inPlane(j1,j2,vertexes)
-%% Comment
-% 判断j1,j2向障碍平面的投影是否有一部分在障碍平面内（待完成）
+function [case1] = dcase(j1,j2,vertexes)
+%% Comments
+% 给定j1,j2 判断向障碍平面的投影是否有部分在障碍平面内
 %% Body
-inPlane = true;
+case1 = true;
 end
