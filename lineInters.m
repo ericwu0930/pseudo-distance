@@ -1,6 +1,6 @@
 function [intersection] = lineIntersect(o1,o2,o3,o4)
 %% Comments
-% 判断o1o2,o3o4两条线段是否相交https://www.cnblogs.com/kane1990/p/5742830.html
+% 通过叉积判断o1o2,o3o4两条线段是否相交https://www.cnblogs.com/kane1990/p/5742830.html
 %% Body
 t1 = cross(o1,o2,o3);
 t2 = cross(o1,o2,o4);

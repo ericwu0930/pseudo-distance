@@ -7,11 +7,11 @@ function [j1g j2g] = ngeneratrix(j1,j2,vertexes,n,R)
 % R 连杆的半径
 %% Body
 [a b c d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
-d = gd(j1,j2,[a b c]);
+D = gD(j1,j2,[a b c]);
 % 如果j1,j2的投影有一部分在障碍平面内
 if inPlane(j1,j2,vertexes) == 1
-    j1g = j1+R*d;
-    j2g = j2+R*d;
+    j1g = j1+R*D;
+    j2g = j2+R*D;
 else
     j1g=zeros(n,3);
     j2g=zeros(n,3);
@@ -27,13 +27,13 @@ else
         rot = [c+h*rx^2 h*rx*ry-rz*s h*rx*rz+ry*s;
             h*rx*ry+rz*s c+h*ry^2 h*ry*rz-rx*s;
             h*rx*rz-ry*s h*ry*rz+rx*s c+h*rz^2];
-        j1g(i,:) = j1+R*rot*d;
-        j2g(i,:) = j2+R*rot*d;
+        j1g(i,:) = j1+R*rot*D;
+        j2g(i,:) = j2+R*rot*D;
     end
 end
 end
 
-function [d]=gd(j1,j2,n)
+function [D]=gD(j1,j2,n)
 %% Comments
 % 得到中心线向障碍平面投影方向的向量d
 %% Body
@@ -49,13 +49,29 @@ nx = A\b;
 A = [j1j2(1) j1j2(2) j1j2(3);
     nx(1) nx(2) nx(3);
     0 0 1];
-d = A\b;
-d = d/norm(d);
+D = A\b;
+D = D/norm(D);
 end
 
 function [case1] = dcase(j1,j2,vertexes)
 %% Comments
-% 给定j1,j2 判断向障碍平面的投影是否有部分在障碍平面内
+% determine case
+% 给定j1,j2 判断向障碍平面的投影是否有部分在障碍平面内 
 %% Body
+% 先将线段往障碍物平面投影，然后判断与障碍物平面的边界是否有交线
 case1 = true;
+end
+
+function [o] = projToPlane(o,a,b,c,d)
+%% Comments
+% 将一点投影到一平面上
+% n表示该平面的法线
+%% Body
+x=fsolve(@(x) myfunc(x,o,a,b,c,d),1);
+o = x*[a;b;c];
+end
+
+function f=myfunc(x,o,a,b,c,d)
+f(1)= x*[a;b;c]+o(:)-y;
+f(2)= [a b c]*y+d;
 end
