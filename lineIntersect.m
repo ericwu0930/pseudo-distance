@@ -6,14 +6,14 @@ t1 = cross(o1,o2,o3);
 t2 = cross(o1,o2,o4);
 t3 = cross(o3,o4,o1);
 t4 = cross(o3,o4,o2);
-if t1*t2>0 || t3*t4 >0
-    intersectNum = 0;
-elseif t1==0 && t2==0
+if abs(t1)<1e-4 && abs(t2)<1e-4
     if rectsIntersect(o1,o2,o3,o4)
         intersectNum = inf;
     else
         intersectNum = 0;
     end
+elseif t1*t2>0 || t3*t4>0
+    intersectNum = 0;
 else
     intersectNum = 1;
 end
@@ -22,7 +22,7 @@ end
 function [intersection] = rectsIntersect(o1,o2,o3,o4)
 %% Comments
 % 快速排斥实验 https://www.cnblogs.com/TangMoon/archive/2017/09/29/7611115.html
-% Body
+%% Body
 if min(o1(1),o2(1)) <= max(o3(1),o3(2)) && min(o3(1),o3(2)) <=max(o1(1),o2(1)) ...
     && min(o1(2),o2(2)) <= max(o3(2),o4(2)) && min(o3(2),o4(2)) <= max(o1(2),o2(2))
     intersection = true;

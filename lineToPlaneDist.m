@@ -10,7 +10,7 @@ function [dist] = lineToPlaneDist(j1, j2, vertexes, n, R)
     [j1g, j2g] = ggeneratrix(j1, j2, vertexes, n, R);
     vertexes = [vertexes; vertexes(1, :)];
     % 计算得到平面方程
-    [a b c d] = gplane(vertexes);
+    [a, b, c, d] = gplane(vertexes);
     % 将母线两点向障碍平面投影
     j1gp = projToPlane(j1g, a, b, c, d);
     j2gp = projToPlane(j2g, a, b, c, d);
@@ -51,14 +51,27 @@ function [dist] = lineToPlaneDist(j1, j2, vertexes, n, R)
                     dist = min([norm(j1g, j1gp), norm(j2g, j2gp)]);
                 else
                     [j1g, j2g] = ggeneratrixex(j1, j2, vertexes, n, R);
-                    for j = 1:size(j1g,1)
-                        dist = min([dist,ltoDist(j1g(i,:),j2g(i,:),vertexes)]);
+
+                    for j = 1:size(j1g, 1)
+                        dist = min([dist, ltoDist(j1g(i, :), j2g(i, :), vertexes)]);
                     end
+
                 end
 
             elseif Nnum == inf
-            elseif Nnum == 1
-            else
+                o =
+
+                if inBound(j1gp, vertexes) &&~inBound(j2gp, vertexes)
+                elseif ~inBound(j1gp, vertexes) && inBound(j2gp, vertexes)
+                else
+
+                    if norm(j1gp -)
+                    end
+
+                elseif Nnum == 1
+                else
+                end
+
             end
 
         end
@@ -83,7 +96,7 @@ function [dist] = ltlDist(o1, o2, o3, o4)
     %% Comments
     % 两条线段之间的最短距离
     %% Body
-
+    dist = 0;
 end
 
 function [dist] = ltoDist(o1, o2, vertexes)
@@ -91,4 +104,22 @@ function [dist] = ltoDist(o1, o2, vertexes)
     % 线段与障碍平面之间的最短距离
     % 注意 vertexes已经首尾相连
     %% Body
+    dist = 0;
+end
+
+function [in] = pinL(o1, o2, o)
+    %% Comments
+    % 判断点o是否在线段o1o2上
+    %% Body
+    if abs(cross(o2 - o1, o - o1)) < 1e-4
+        in = true;
+    else
+        in = false;
+    end
+
+end
+
+function [o] = findPoint()
+    %% Comments
+    % 找到
 end
