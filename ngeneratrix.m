@@ -81,17 +81,3 @@ for i = 1:size(vertexes,1)-1
 end
 case1=false;
 end
-
-function [o] = projToPlane(o,a,b,c,d)
-%% Comments
-% 将一点投影到一平面上
-% n表示该平面的法线
-%% Body
-x=fsolve(@(x) myfunc(x,o,a,b,c,d),1);
-o = x*[a;b;c];
-end
-
-function f=myfunc(x,o,a,b,c,d)
-f(1)= x*[a;b;c]+o(:)-y;
-f(2)= [a b c]*y+d;
-end

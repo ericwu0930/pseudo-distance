@@ -8,7 +8,7 @@ proj = 1;
 o = o(:)';
 % 如果是三维点，则做投影
 if length(o)==3
-    [a b c d] = gplane(vertexes(1),vertexes(2),vertexes(3));
+    [a b c d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
     if a~=0
         proj = 1;
     elseif a==0&&b~=0
