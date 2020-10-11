@@ -8,6 +8,10 @@ function [j1g,j2g] = ngeneratrix(j1,j2,vertexes,n,R)
 %% Body
 [a,b,c,~] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
 D = gD(j1,j2,[a b c]);
+% 选择指向平面方向的D
+if D(:)'*(vertexes(1,:)-j1)<0
+    D = -D;
+end
 % 如果j1,j2的投影有一部分在障碍平面内
 if dcase(j1,j2,vertexes) == true
     j1g = j1+R*D;
@@ -70,7 +74,7 @@ end
 % 首尾相连 增加一行
 vertexes = [vertexes;vertexes(1,:)];
 for i = 1:size(vertexes,1)-1
-    if lineIntersect(j1p,j2p,vertexes(i,:),vertexes(i+1,:))
+    if lineIntersect(j1p,j2p,vertexes(i,:),vertexes(i+1,:)) > 0
         case1=true;
         return;
     end

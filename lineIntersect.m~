@@ -9,11 +9,7 @@ t4 = cross(o3,o4,o2);
 if t1*t2>0 || t3*t4 >0
     intersectNum = 0;
 elseif t1==0 && t2==0
-    if rectsIntersect(o1,o2,o3,o4)
-        intersectNum = inf;
-    else
-        intersectNum = 0;
-    end
+    if;
 else
     intersectNum = 1;
 end

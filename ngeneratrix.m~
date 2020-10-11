@@ -1,4 +1,4 @@
-function [j1g j2g] = ngeneratrix(j1,j2,vertexes,n,R)
+function [j1g,j2g] = ngeneratrix(j1,j2,vertexes,n,R)
 %% Comment
 % 得到距离障碍平面最近的母线，如果投影全部在障碍平面之外则返回一定数量的母线，否则返回一条
 % j1,j2 连杆两端点
@@ -6,10 +6,11 @@ function [j1g j2g] = ngeneratrix(j1,j2,vertexes,n,R)
 % n 返回母线的数量
 % R 连杆的半径
 %% Body
-[a b c d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
+[a,b,c,~] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
 D = gD(j1,j2,[a b c]);
+if D
 % 如果j1,j2的投影有一部分在障碍平面内
-if inPlane(j1,j2,vertexes) == 1
+if dcase(j1,j2,vertexes) == true
     j1g = j1+R*D;
     j2g = j2+R*D;
 else
@@ -53,28 +54,29 @@ D = A\b;
 D = D/norm(D);
 end
 
-function [case1] = dcase(j1,j2,vetexes)
+function [case1] = dcase(j1,j2,vertexes)
 %% Comments
 % determine case
 % 给定j1,j2 判断向障碍平面的投影是否有部分在障碍平面内 
 %% Body
 % 先将线段往障碍物平面投影，然后判断与障碍物平面的边界是否有交线
-[a b c d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
+[a,b,c,d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
 j1p=projToPlane(j1,a,b,c,d);
 j2p=projToPlane(j2,a,b,c,d);
 % 如果两个点都在障碍物平面内，则为论文中的case1
-if inBound(j1,vertexes) && inBound(j2,vertexes)
+if inBound(j1p,vertexes) && inBound(j2p,vertexes)
     case1=true;
     return;
 end
 % 首尾相连 增加一行
 vertexes = [vertexes;vertexes(1,:)];
 for i = 1:size(vertexes,1)-1
-    if lineIntersect(j1,j2,vertexes(i,:),vertexes(i+1,:))
+    if lineIntersect(j1p,j2p,vertexes(i,:),vertexes(i+1,:))
         case1=true;
         return;
     end
 end
+case1=false;
 end
 
 function [o] = projToPlane(o,a,b,c,d)
