@@ -82,7 +82,31 @@ else
                 end
             end
         elseif Nnum == 1
+            if size(intersection,1)~=1 && size(intersectEdgeE,1)~=1 && ...
+                    size(intersectEdgeS,1)~=1
+                error("母线投影与障碍多边形的交点个数有误，请检查");
+            end
+            oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE);
+            if inBound(j1gp,vertexes) && ~inBound(j2gp,vertexes)
+                dist = min([ltoDist1(j1g,j1gp,oj,intersection),ltoDist2(oj,j2g,vertexes)]);
+            else
+                dist = min([ltoDist1(j2g,j2gp,oj,intersection),ltoDist2(oj,j1g,vertexes)]);
+            end
         else
+            if size(intersection,1)~=2 && size(intersectEdgeE,1)~=2 && ...
+                    size(intersectEdgeS,1)~=2
+                error("母线投影与障碍多边形的交点个数有误，请检查");
+            end
+            oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE);
+            if norm(oj(1,:)-j1g)<=norm(oj(2,:)-j1g)
+                dist = min([ltoDist1(oj(1,:),intersection(1,:),oj(2,:),...
+                    intersection(2,:)),ltoDist2(oj(1,:),j1g,vertexes),...
+                    ltoDist2(oj(2,:),j2g,vertexes)]);
+            else
+                dist = min([ltoDist1(oj(1,:),intersection(1,:),oj(2,:),...
+                    intersection(2,:)),ltoDist2(oj(2,:),j1g,vertexes),...
+                    ltoDist2(oj(1,:),j2g,vertexes)]);
+            end
         end
     end
 end
