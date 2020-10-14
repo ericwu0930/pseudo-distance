@@ -122,25 +122,25 @@ function f = myfunc(x, j1g, j2g, a, b, c, d)
 f = [a b c d] * ((j2g - j1g) * x + j1g) + d;
 end
 
-function [dist] = ltlDist(j1, j2, o1, o2, d)
+function [dist] = ltlDist(j1g, j2g, o1, o2)
 % ltlDist 线段j1j2与线段o1o2之间的最短距离
 % d 其实是Rd
 %% Body
-k1 = 2*(norm(o2-o2))^2;
-p1 = -2*(o2(:)'-o1(:)')*(j2(:)-j1(:));
+k1 = 2*(norm(o2-o1))^2;
+p1 = -2*(o2(:)'-o1(:)')*(j2g(:)-j1g(:));
 k2 = p1;
-k3 = -2*(o2(:)'-o1(:)')*(j1(:)-o1(:)+d)
-p2 = 2*(norm(j2-j1))^2;
-p3 = 2*(j2-j1)*(j1-o1+d);
+k3 = -2*(o2(:)'-o1(:)')*(j1g(:)-o1(:));
+p2 = 2*(norm(j2g-j1g))^2;
+p3 = 2*(j2g-j1g)*(j1g-o1);
 e1 = (p3*k2-k3*p2)/(k1*p2-p1*k2);
 e2 = -(p3+p1*e1)/p2;
 % 两线段之间距离函数
-f = @(n1,n2) norm((j2-j1)*n1-(o2-o1)*n2+j1-o1+d);
+f = @(n1,n2) norm((j2g-j1g)*n2-(o2-o1)*n1+j1g-o1);
 lambda0 = f(e1,e2);
-lambda1 = f(0,n2);
-lambda2 = f(1,n2);
-lambda3 = f(n1,0);
-lambda4 = f(n1,1);
+lambda1 = f(0,0);
+lambda2 = f(1,0);
+lambda3 = f(0,1);
+lambda4 = f(1,1);
 dist = min([lambda1,lambda2,lambda3,lambda4]);
 if e1>=0 && e1<=1 && e2>=0 && e2<=1
     dist = min([dist,lambda0]);
@@ -153,12 +153,12 @@ function [dist] = ltoDist1(o1,o1p,o2,o2p)
 dist = min([norm(o1p-o1),norm(o2p-o2)]);
 end
 
-function [dist] = ltoDist2(j1, j2, vertexes)
+function [dist] = ltoDist2(j1g, j2g, vertexes)
 % ltoDist2 线段与障碍平面之间的最短距离 算法2
 % 注意 vertexes已经首尾相连
 %% Body
 for i = 1:size(vertexes,1)
-    dist = min([dist,ltlDist(j1,j2,vertexes(i,:),vertexes(i+1,:))]);
+    dist = min([dist,ltlDist(j1g,j2g,vertexes(i,:),vertexes(i+1,:))]);
 end
 end
 
