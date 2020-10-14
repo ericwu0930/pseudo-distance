@@ -1,6 +1,5 @@
 function [inPlane] = inPlane(o,vertexes)
-%% Comments
-% 判断向量是否在障碍平面内
+% inPlane 判断向量是否在障碍平面内
 % o 向量
 % vertexes 顶点，按顺时针组成一个平面
 %% Body

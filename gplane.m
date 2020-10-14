@@ -1,6 +1,5 @@
 function [a b c d] = gplane(v0,v1,v2)
-%% Comments
-% 根据三个顶点得到平面方程
+% gplane 根据三个顶点得到平面方程
 %% Body
 % 全部变成列向量
 v0=v0(:);

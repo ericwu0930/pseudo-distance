@@ -1,6 +1,5 @@
 function [dist] = lineToPlaneDist(j1, j2, vertexes, n, R)
-%% Comments
-% 计算得到直线到平面的距离
+% lineToPlaneDist 计算得到直线到平面的距离
 % j1,j2 连杆的中心线
 % vertexes 障碍顶点
 % n 最近母线的生成数
@@ -73,12 +72,12 @@ else
             else
                 if norm(j1gp-intersection(1,:)) <= norm(j2gp-intersection(1,:))
                     dist = min([ltoDist1(intersection(1,:),...
-                    intersection(2,:)),ltoDist2(j1g,oj(1,:),vertexes),...
-                    ltoDist2(j2g,oj(2,:),vertexes)]);
+                        intersection(2,:)),ltoDist2(j1g,oj(1,:),vertexes),...
+                        ltoDist2(j2g,oj(2,:),vertexes)]);
                 else
                     dist = min([ltoDist1(intersection(1,:),...
-                    intersection(2,:)),ltoDist2(j1g,oj(2,:),vertexes),...
-                    ltoDist2(j2g,oj(1,:),vertexes)]);
+                        intersection(2,:)),ltoDist2(j1g,oj(2,:),vertexes),...
+                        ltoDist2(j2g,oj(1,:),vertexes)]);
                 end
             end
         elseif Nnum == 1
@@ -113,8 +112,7 @@ end
 end
 
 function [So] = getIntersection(j1g, j2g, a, b, c, d)
-%% Comments
-% 当j1'j2'分布在障碍平面两侧时，求得交点
+% getIntersectoin 当j1'j2'分布在障碍平面两侧时，求得交点
 %% Body
 x = fsolve(@(x) myfunc(x, j1g, j2g, a, b, c, d), 1);
 So = (j2g - j1g) * x + j1g;
@@ -124,31 +122,48 @@ function f = myfunc(x, j1g, j2g, a, b, c, d)
 f = [a b c d] * ((j2g - j1g) * x + j1g) + d;
 end
 
-function [dist] = ltlDist(o1, o2, o3, o4)
-%% Comments
-% 两条线段之间的最短距离
+function [dist] = ltlDist(j1, j2, o1, o2, d)
+% ltlDist 线段j1j2与线段o1o2之间的最短距离
+% d 其实是Rd
 %% Body
-dist = 0;
+k1 = 2*(norm(o2-o2))^2;
+p1 = -2*(o2(:)'-o1(:)')*(j2(:)-j1(:));
+k2 = p1;
+k3 = -2*(o2(:)'-o1(:)')*(j1(:)-o1(:)+d)
+p2 = 2*(norm(j2-j1))^2;
+p3 = 2*(j2-j1)*(j1-o1+d);
+e1 = (p3*k2-k3*p2)/(k1*p2-p1*k2);
+e2 = -(p3+p1*e1)/p2;
+% 两线段之间距离函数
+f = @(n1,n2) norm((j2-j1)*n1-(o2-o1)*n2+j1-o1+d);
+lambda0 = f(e1,e2);
+lambda1 = f(0,n2);
+lambda2 = f(1,n2);
+lambda3 = f(n1,0);
+lambda4 = f(n1,1);
+dist = min([lambda1,lambda2,lambda3,lambda4]);
+if e1>=0 && e1<=1 && e2>=0 && e2<=1
+    dist = min([dist,lambda0]);
+end
 end
 
 function [dist] = ltoDist1(o1,o1p,o2,o2p)
-%% Comments
-% 线段与障碍平面之间的最短距离 算法1
+% ltoDist1 线段与障碍平面之间的最短距离 算法1
 %% Body
 dist = min([norm(o1p-o1),norm(o2p-o2)]);
 end
 
-function [dist] = ltoDist2(o1, o2, vertexes)
-%% Comments
-% 线段与障碍平面之间的最短距离 算法2
+function [dist] = ltoDist2(j1, j2, vertexes)
+% ltoDist2 线段与障碍平面之间的最短距离 算法2
 % 注意 vertexes已经首尾相连
 %% Body
-dist = 0;
+for i = 1:size(vertexes,1)
+    dist = min([dist,ltlDist(j1,j2,vertexes(i,:),vertexes(i+1,:))]);
+end
 end
 
 function [oj] = goj(j1g,j2g,o1,o2,intersection)
-%% Comments
-% 将o1,或者o2，或者both投影到j1gj2g线段上
+% goj 将o1,或者o2，或者both投影到j1gj2g线段上
 % 小tip，临时向量不能索引
 % https://stackoverflow.com/questions/3627107/how-can-i-index-a-matlab-array-returned-by-a-function-without-first-assigning-it
 %% Body
