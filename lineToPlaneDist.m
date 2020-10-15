@@ -5,8 +5,11 @@ function [dist] = lineToPlaneDist(j1, j2, vertexes, n, R)
 % n 最近母线的生成数
 % R 包络连杆圆柱的半径
 %% Body
-% 将障碍平面顶点首尾相连
+if size(vertexes,1)<3
+    error("给出的障碍物顶点无法构成平面");
+end
 [j1g, j2g] = ggeneratrix(j1, j2, vertexes, n, R);
+% 将障碍平面顶点首尾相连
 vertexes = [vertexes; vertexes(1, :)];
 % 计算得到平面方程
 [a, b, c, d] = gplane(vertexes);

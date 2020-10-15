@@ -5,8 +5,14 @@ function [dist]=pdist(link,R,vertexes,faces,n)
 % vertexes 障碍平面顶点集合 nx3
 % faces 障碍平面 nx1的胞元数组
 %% Body
-% 立方体面个数
+if ~iscell(faces)
+    error("输入的faces不是胞元");
+end
+if size(link,1)-1 ~= length(R)
+    error("输入的连杆半径个数有误");
+end
 dist = inf;
+% 立方体面个数
 faceCnt = size(faces,1);
 % 遍历每一个障碍面
 for i = 1:faceCnt
