@@ -7,12 +7,13 @@ function [j1g, j2g] = ggeneratrix(j1, j2, vertexes, R)
 [a, b, c, ~] = gplane(vertexes(1, :), vertexes(2, :), vertexes(3, :));
 D = gD(j1, j2, [a b c]);
 % 选择指向平面方向的D
-if D(:)' * (vertexes(1, :) - j1) < 0
+if D(:)' * (vertexes(1, :)' - j1(:)) < 0
     D = -D;
 end
 
-j1g = j1 + R * D;
-j2g = j2 + R * D;
+j1g = j1 + R * D(:)';
+j2g = j2 + R * D(:)';
+
 end
 
 function [D] = gD(j1, j2, n)

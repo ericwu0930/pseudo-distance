@@ -8,7 +8,7 @@ v2=v2(:);
 v0v1=v1-v0;
 v0v2=v2-v0;
 n=cross(v0v1,v0v2);
-if n<1e-4
+if abs(n)<1e-4
     error("三点共线，无法确定平面");
 end
 a=n(1);
