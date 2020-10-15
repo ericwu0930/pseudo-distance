@@ -1,5 +1,4 @@
 function [intersectNum,intersection] = lineIntersect(j1,j2,o1,o2)
-%% Comments
 % 通过叉积判断j1j2,o1o2两条线段是否相交，并返回交点 
 % 如果有无数交点，表明o1o2, o3o4有重叠部分，返回o3||o4（取决于是否在o1o2上）
 % 如果有一个交点，则返回该交点
@@ -35,8 +34,8 @@ end
 end
 
 function [intersection] = rectsIntersect(o1,o2,o3,o4)
-%% Comments
-% 快速排斥实验 https://www.cnblogs.com/TangMoon/archive/2017/09/29/7611115.html
+% 快速排斥实验 
+% https://www.cnblogs.com/TangMoon/archive/2017/09/29/7611115.html
 %% Body
 if min(o1(1),o2(1)) <= max(o3(1),o4(1)) && min(o3(1),o4(1)) <=max(o1(1),o2(1)) ...
     && min(o1(2),o2(2)) <= max(o3(2),o4(2)) && min(o3(2),o4(2)) <= max(o1(2),o2(2))
@@ -47,7 +46,6 @@ end
 end
 
 function [intersection] = gIntegersection(o1,o2,o3,o4)
-%% Comments
 % 使用叉积计算得到o1o2,o3o4的交点
 % https://blog.csdn.net/xdedzl/article/details/86009147
 %% Body

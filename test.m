@@ -94,4 +94,3 @@ plot3(intersection(:,1),intersection(:,2),intersection(:,3),'mo')
 plot3([intersectEdgeS(1,1),intersectEdgeE(1,1)],[intersectEdgeS(1,2),intersectEdgeE(1,2)],...
     [intersectEdgeS(1,3),intersectEdgeE(1,3)],'-ro')
 
-
