@@ -27,6 +27,7 @@ vertexes = [vertexes; vertexes(1, :)];
 j1gp = projToPlane(j1g, a, b, c, d);
 j2gp = projToPlane(j2g, a, b, c, d);
 plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r--');
+dist = inf;
 % 计算母线在障碍平面的投影与障碍多边形的交点个数
 intersection = [];
 intersectEdgeS = [];
@@ -73,10 +74,9 @@ else
         if inBound(j1gp, vertexes) && inBound(j2gp, vertexes)
             dist = ltoDist1(j1g,j1gp,j2g,j2gp);
         else
-            [j1g, j2g] = ggeneratrixex(j1, j2, vertexes, n, R);
+            [j1g, j2g] = ggeneratrixes(j1, j2, vertexes, n, R);
             for j = 1:size(j1g, 1)
-                dist = min([dist, ...
-                    ltoDist2(j1g(i, :), j2g(i, :),vertexes)]);
+                dist = min([dist,ltoDist2(j1g(j, :), j2g(j, :),vertexes)]);
             end
         end
     elseif Nnum == inf
@@ -103,7 +103,7 @@ else
                 size(intersectEdgeS,1)~=1
             error("母线投影与障碍多边形的交点个数有误，请检查");
         end
-        oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE);
+        oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE,intersection);
         if inBound(j1gp,vertexes) && ~inBound(j2gp,vertexes)
             dist = min([ltoDist1(j1g,j1gp,oj,intersection),ltoDist2(oj,j2g,vertexes)]);
         else

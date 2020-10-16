@@ -1,6 +1,7 @@
 clc;
 clear;
 close all;
+% 测试辅助函数
 
 %% test ggneratrix
 plane=@(x,y,z) x+2*y+3*z+4;

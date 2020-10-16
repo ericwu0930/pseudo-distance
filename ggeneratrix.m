@@ -1,4 +1,4 @@
-function [j1g, j2g] = ggeneratrix(j1, j2, vertexes, R)
+function [j1g, j2g,D] = ggeneratrix(j1, j2, vertexes, R)
 % 得到距离障碍平面最近的母线
 % j1,j2 连杆两端点
 % vertexes 障碍平面顶点,需要按照顺时针或者逆时针给出
