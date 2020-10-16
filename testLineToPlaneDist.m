@@ -32,4 +32,9 @@ j2 = [-5 5 7];
 
 tic
 dist = lineToPlaneDist(j1,j2,vertexes,50,5)
+<<<<<<< HEAD
 toc
+=======
+toc
+
+>>>>>>> 602690bd701918bb0bf3be2ec482c51032ade30b
