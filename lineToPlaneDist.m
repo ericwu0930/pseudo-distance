@@ -5,24 +5,29 @@ function [dist] = lineToPlaneDist(j1, j2, vertexes, n, R)
 % n 最近母线的生成数
 % R 包络连杆圆柱的半径
 %% Body
-patch(vertexes([1,2,3],1),vertexes([1,2,3],2),vertexes([1,2,3],3),'y');
-xlabel('X')
-ylabel('Y')
-zlabel('Z')
-axis on
-grid on
-axis equal
-hold on
-plot3([j1(1),j2(1)],[j1(2),j2(2)],[j1(3),j2(3)],'g');
-text(j1(1),j1(2),j1(3),'j1');
-text(j2(1),j2(2),j2(3),'j2');
+
+% just for test
+% patch(vertexes([1,2,3],1),vertexes([1,2,3],2),vertexes([1,2,3],3),'y');
+% xlabel('X')
+% ylabel('Y')
+% zlabel('Z')
+% axis on
+% grid on
+% axis equal
+% hold on
+% plot3([j1(1),j2(1)],[j1(2),j2(2)],[j1(3),j2(3)],'g');
+% text(j1(1),j1(2),j1(3),'j1');
+% text(j2(1),j2(2),j2(3),'j2');
+
 if size(vertexes,1)<3
     error("给出的障碍物顶点无法构成平面");
 end
 [j1g, j2g] = ggeneratrix(j1, j2, vertexes, R);
-plot3([j1g(1),j2g(1)],[j1g(2),j2g(2)],[j1g(3),j2g(3)],'r--');
-text(j1g(1),j1g(2),j1g(3),"j_{1}'");
-text(j2g(1),j2g(2),j2g(3),"j_{2}'");
+% just for test
+% plot3([j1g(1),j2g(1)],[j1g(2),j2g(2)],[j1g(3),j2g(3)],'r--');
+% text(j1g(1),j1g(2),j1g(3),"j_{1}'");
+% text(j2g(1),j2g(2),j2g(3),"j_{2}'");
+
 % 将障碍平面顶点首尾相连
 vertexes = [vertexes; vertexes(1, :)];
 % 计算得到平面方程
@@ -30,11 +35,13 @@ vertexes = [vertexes; vertexes(1, :)];
 % 将母线两点向障碍平面投影
 j1gp = projToPlane(j1g, a, b, c, d);
 j2gp = projToPlane(j2g, a, b, c, d);
-plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r--');
-text(j1gp(1),j1gp(2),j1gp(3),"j_{1p}'");
-text(j2gp(1),j2gp(2),j2gp(3),"j_{2p}'");
-plot3([j1gp(1),j1g(1)],[j1gp(2),j1g(2)],[j1gp(3),j1g(3)],'r--');
-plot3([j2gp(1),j2g(1)],[j2gp(2),j2g(2)],[j2gp(3),j2g(3)],'r--');
+% just for test
+% plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r--');
+% text(j1gp(1),j1gp(2),j1gp(3),"j_{1p}'");
+% text(j2gp(1),j2gp(2),j2gp(3),"j_{2p}'");
+% plot3([j1gp(1),j1g(1)],[j1gp(2),j1g(2)],[j1gp(3),j1g(3)],'r--');
+% plot3([j2gp(1),j2g(1)],[j2gp(2),j2g(2)],[j2gp(3),j2g(3)],'r--');
+
 dist = inf;
 % 计算母线在障碍平面的投影与障碍多边形的交点个数
 intersection = [];
@@ -128,9 +135,9 @@ else
                 intersection(2,:)),ltoDist2(oj(1,:),j1g,vertexes),...
                 ltoDist2(oj(2,:),j2g,vertexes)]);
         else
-            % 仅供调试
-            plot3([oj(1,1),intersection(1,1)],[oj(1,2),intersection(1,2)],[oj(1,3),intersection(1,3)]);
-            plot3([oj(2,1),intersection(2,1)],[oj(2,2),intersection(2,2)],[oj(2,3),intersection(2,3)]);
+            % just for test
+%             plot3([oj(1,1),intersection(1,1)],[oj(1,2),intersection(1,2)],[oj(1,3),intersection(1,3)]);
+%             plot3([oj(2,1),intersection(2,1)],[oj(2,2),intersection(2,2)],[oj(2,3),intersection(2,3)]);
             
             
             dist = min([ltoDist1(oj(1,:),intersection(1,:),oj(2,:),...
