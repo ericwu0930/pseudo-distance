@@ -23,16 +23,14 @@ j1 = j1(:);
 j2 = j2(:);
 n = n(:);
 j1j2 = j2 - j1;
-A = [j1j2(1) j1j2(2) j1j2(3);
-    n(1) n(2) n(3);
-    0 0 1];
-b = [0; 0; 1];
-nx = A \ b;
-A = [j1j2(1) j1j2(2) j1j2(3);
-    nx(1) nx(2) nx(3);
-    0 0 1];
-D = A \ b;
-D = D / norm(D);
+nx = fsolve(@(x)myfunc1(j1j2,n,x),[0;0;0])
+D = fsolve(@(x)myfunc1(j1j2,nx,x),[0;0;0])
+end
+
+function F = myfunc1(j1j2,n,x)
+F(1) = j1j2(:)'* x 
+F(2) = x(:)'* n(:)
+F(3) = norm(x)-1
 end
 
 function [case1] = dcase(j1, j2, vertexes)
