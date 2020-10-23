@@ -7,7 +7,7 @@ l4=70;
 l5=147;
 l6=152;
 l7=78.5;
-% 设置连杆
+% 设置连杆 
 L(1)=Link('d',l1,'alpha',pi/2,'a',l2,'offset',pi/2);
 L(2)=Link('d',0,'alpha',0,'a',l3,'offset',pi/2);
 L(3)=Link('d',0,'alpha',pi/2,'a',l4);
