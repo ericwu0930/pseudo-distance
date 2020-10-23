@@ -1,5 +1,5 @@
 function [inBound] = inBound(o,vertexes)
-% inBound 判断给定的点向量点是否在障碍物边界内(射线法，参考https://blog.csdn.net/lynon/article/details/82015834)
+% inBound 判断给定的点向量点是否在障碍物边界内(射线法，参考https://blog.csdn.net/lynon/article/details/82015834
 % o 向量点
 % vertexes 障碍平面顶点，按顺时针进行排列
 %% Body

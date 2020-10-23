@@ -4,7 +4,7 @@ function [inPlane] = inPlane(o,vertexes)
 % vertexes 顶点，按顺时针组成一个平面
 %% Body
 [a,b,c,d] = gplane(vertexes(1,:),vertexes(2,:),vertexes(3,:));
-if abs([o(:)' 1]*[a;b;c;d]) < 1e-4
+if abs([o(:)' 1]*[a;b;c;d]) < 1e-3
     inPlane = true;
 else
     inPlane = false;

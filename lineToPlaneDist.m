@@ -23,6 +23,7 @@ if size(vertexes,1)<3
     error("给出的障碍物顶点无法构成平面");
 end
 [j1g, j2g] = ggeneratrix(j1, j2, vertexes, R);
+
 % just for test
 % plot3([j1g(1),j2g(1)],[j1g(2),j2g(2)],[j1g(3),j2g(3)],'r--');
 % text(j1g(1),j1g(2),j1g(3),"j_{1}'");
@@ -35,8 +36,9 @@ vertexes = [vertexes; vertexes(1, :)];
 % 将母线两点向障碍平面投影
 j1gp = projToPlane(j1g, a, b, c, d);
 j2gp = projToPlane(j2g, a, b, c, d);
+
 % just for test
-% plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r--');
+% plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r-');
 % text(j1gp(1),j1gp(2),j1gp(3),"j_{1p}'");
 % text(j2gp(1),j2gp(2),j2gp(3),"j_{2p}'");
 % plot3([j1gp(1),j1g(1)],[j1gp(2),j1g(2)],[j1gp(3),j1g(3)],'r--');
@@ -53,6 +55,9 @@ for i = 1:size(vertexes, 1) - 1
         vertexes(i + 1, :));
     if num == inf
         Nnum = inf;
+        intersection = [intersection;inters];
+        intersectEdgeS = [intersectEdgeS;vertexes(i,:)];
+        intersectEdgeE = [intersectEdgeE;vertexes(i+1,:)];
         break
     end
     if num > 0
@@ -76,9 +81,13 @@ elseif inPlane(j1g, vertexes) && inPlane(j2g, vertexes)
     end
 else
     % j1'和j2'在平面的两侧,且交点在障碍多边形内
-    if (j1gp - j1g) * (j2gp - j2g) < 0
+    if (j1gp(:)' - j1g(:)') * (j2gp(:) - j2g(:)) < 0
         % 求j1'j2'与障碍平面的交点
         So = getIntersection(j1g, j2g, a, b, c, d);
+        % just for test
+        plot3(So(1),So(2),So(3),'ro');
+        text(So(1),So(2),So(3)+0.5,'S');
+        
         if inBound(So, vertexes)
             dist = 0;
             return;
@@ -90,12 +99,17 @@ else
             dist = ltoDist1(j1g,j1gp,j2g,j2gp);
         else
             [j1g, j2g] = ggeneratrixes(j1, j2, vertexes, n, R);
+            % just for test
+%             for i=1:length(j1g)
+%                 plot3([j1g(i,1),j2g(i,1)],[j1g(i,2),j2g(i,2)],[j1g(i,3),j2g(i,3)]);
+%             end
+            
             for j = 1:size(j1g, 1)
                 dist = min([dist,ltoDist2(j1g(j, :), j2g(j, :),vertexes)]);
             end
         end
     elseif Nnum == inf
-        oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE);
+        oj = goj(j1g,j2g,intersectEdgeS,intersectEdgeE,intersection);
         if inBound(j1gp, vertexes)&&~inBound(j2gp, vertexes)
             dist = min([ltoDist1(j1g,j1gp,oj,intersection),...
                 ltoDist2(j2g,oj,vertexes)]);
@@ -138,7 +152,10 @@ else
             % just for test
 %             plot3([oj(1,1),intersection(1,1)],[oj(1,2),intersection(1,2)],[oj(1,3),intersection(1,3)]);
 %             plot3([oj(2,1),intersection(2,1)],[oj(2,2),intersection(2,2)],[oj(2,3),intersection(2,3)]);
-            
+%             text(oj(1,1),oj(1,2),oj(1,3)+0.4,"S_{1}'");
+%             text(oj(2,1),oj(2,2),oj(2,3)+0.4,"S_{2}'");
+%             text(intersection(1,1),intersection(1,2),intersection(1,3)+0.4,"S_{1}");
+%             text(intersection(2,1),intersection(2,2),intersection(2,3)+0.4,"S_{2}");
             
             dist = min([ltoDist1(oj(1,:),intersection(1,:),oj(2,:),...
                 intersection(2,:)),ltoDist2(oj(2,:),j1g,vertexes),...
@@ -146,7 +163,7 @@ else
         end
     end
 end
-end
+end 
 
 function [So] = getIntersection(j1g, j2g, a, b, c, d)
 % getIntersectoin 当j1'j2'分布在障碍平面两侧时，求得交点
@@ -156,7 +173,7 @@ So = (j2g - j1g) * x + j1g;
 end
 
 function f = myfunc(x, j1g, j2g, a, b, c, d)
-f = [a b c d] * ((j2g - j1g) * x + j1g) + d;
+f = [a b c] * ((j2g(:) - j1g(:)) * x + j1g(:)) + d;
 end
 
 function [dist] = ltlDist(j1g, j2g, o1, o2)

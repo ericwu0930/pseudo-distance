@@ -24,10 +24,10 @@ for i = 1:faceCnt
         vCnt = length(plane);
         cpps = zeros(vCnt,3);
         for k = 1:vCnt
-           cpps(k,:) = vertexes(plane(k));
+           cpps(k,:) = vertexes(plane(k),:);
         end
-        dist = min([dist,lineToPlaneDist(link(i,:),link(i+1,:),...
-            cpps,n,R(j))]);
+        curDist = lineToPlaneDist(link(j,:),link(j+1,:),cpps,n,R(j));
+        dist = min([dist,curDist]);
     end
 end
 end
