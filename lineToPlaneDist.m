@@ -25,7 +25,7 @@ end
 [j1g, j2g] = ggeneratrix(j1, j2, vertexes, R);
 
 % just for test
-% plot3([j1g(1),j2g(1)],[j1g(2),j2g(2)],[j1g(3),j2g(3)],'r--');
+% pjg=plot3([j1g(1),j2g(1)],[j1g(2),j2g(2)],[j1g(3),j2g(3)],'r--');
 % text(j1g(1),j1g(2),j1g(3),"j_{1}'");
 % text(j2g(1),j2g(2),j2g(3),"j_{2}'");
 
@@ -38,7 +38,7 @@ j1gp = projToPlane(j1g, a, b, c, d);
 j2gp = projToPlane(j2g, a, b, c, d);
 
 % just for test
-% plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'r-');
+% pjgp=plot3([j1gp(1),j2gp(1)],[j1gp(2),j2gp(2)],[j1gp(3),j2gp(3)],'ro-');
 % text(j1gp(1),j1gp(2),j1gp(3),"j_{1p}'");
 % text(j2gp(1),j2gp(2),j2gp(3),"j_{2p}'");
 % plot3([j1gp(1),j1g(1)],[j1gp(2),j1g(2)],[j1gp(3),j1g(3)],'r--');
@@ -85,8 +85,8 @@ else
         % 求j1'j2'与障碍平面的交点
         So = getIntersection(j1g, j2g, a, b, c, d);
         % just for test
-        plot3(So(1),So(2),So(3),'ro');
-        text(So(1),So(2),So(3)+0.5,'S');
+%         plot3(So(1),So(2),So(3),'ro');
+%         text(So(1),So(2),So(3)+0.5,'S');
         
         if inBound(So, vertexes)
             dist = 0;
@@ -99,12 +99,22 @@ else
             dist = ltoDist1(j1g,j1gp,j2g,j2gp);
         else
             [j1g, j2g] = ggeneratrixes(j1, j2, vertexes, n, R);
+            
             % just for test
+%             pjgps = ones(50,1);
 %             for i=1:length(j1g)
-%                 plot3([j1g(i,1),j2g(i,1)],[j1g(i,2),j2g(i,2)],[j1g(i,3),j2g(i,3)]);
+%                 pjgps(i)=plot3([j1g(i,1),j2g(i,1)],[j1g(i,2),j2g(i,2)],[j1g(i,3),j2g(i,3)]);
 %             end
             
             for j = 1:size(j1g, 1)
+                newDist = ltoDist2(j1g(j, :), j2g(j, :),vertexes);
+                if dist>newDist
+                    dist = newDist;
+                    % just for test
+%                     delete(pjg);
+%                     pjg = plot3([j1g(j,1),j2g(j,1)],[j1g(j,2),j2g(j,2)],[j1g(j,3),j2g(j,3)],'r--');
+
+                end
                 dist = min([dist,ltoDist2(j1g(j, :), j2g(j, :),vertexes)]);
             end
         end
@@ -163,6 +173,10 @@ else
         end
     end
 end
+% for test
+% delete(pjg);
+% delete(pjgp);
+
 end 
 
 function [So] = getIntersection(j1g, j2g, a, b, c, d)

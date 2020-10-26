@@ -24,10 +24,16 @@ for i = 1:faceCnt
         vCnt = length(plane);
         cpps = zeros(vCnt,3);
         for k = 1:vCnt
-           cpps(k,:) = vertexes(plane(k),:);
+            cpps(k,:) = vertexes(plane(k),:);
         end
+        % for test
+        h=patch(cpps(:,1),cpps(:,2),cpps(:,3),'y');
+        
         curDist = lineToPlaneDist(link(j,:),link(j+1,:),cpps,n,R(j));
         dist = min([dist,curDist]);
+        
+        % for test
+        delete(h);
     end
 end
 end
