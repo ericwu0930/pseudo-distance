@@ -1,6 +1,6 @@
 % rcim 与 qdistance效果对比
 % qdistance算法 Q是正八面体
-clear;
+clear all;
 clc;
 close all;
 
@@ -83,6 +83,7 @@ Aeq = [row1;
 beq = [zeros(size(G,2),1);1;1];
 f = [zeros(1,size(G,1)+size(H,1)),ones(1,size(Q,1))];
 lb = zeros(size(f));
-[x,fval] = linprog(f,[],[],Aeq,beq,lb,[]);
+options = optimoptions('linprog','Algorithm','interior-point');
+[x,fval] = linprog(f,[],[],Aeq,beq,lb,[],options);
 dist = fval;
 end

@@ -1,6 +1,6 @@
 % rcim 与 qdistance效果对比
-% qdistance算法 
-clear;
+% qdistance算法 正四边形 及其细化 
+clear all;
 clc;
 close all;
 
@@ -52,6 +52,8 @@ face=[1 2 3;
     1 2 4;
     1 3 4;
     2 3 4];
+[Q,face] = subdivision(Q,face);
+
 tic
 dist = inf;
 for i = 1 : size(cubes,1)
@@ -83,6 +85,7 @@ Aeq = [row1;
 beq = [zeros(size(G,2),1);1;1];
 f = [zeros(1,size(G,1)+size(H,1)),ones(1,size(Q,1))];
 lb = zeros(size(f));
-[x,fval] = linprog(f,[],[],Aeq,beq,lb,[]);
+options = optimoptions('linprog','Algorithm','interior-point');
+[x,fval] = linprog(f,[],[],Aeq,beq,lb,[],options);
 dist = fval;
 end

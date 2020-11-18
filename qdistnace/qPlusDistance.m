@@ -29,9 +29,9 @@ for i = 1:3
         P((i-1)*3+j,:) = G(i,:)-H(j,:);
     end
 end
-P = createSimplyPoly(P);
+K = convhull(P(:,1),P(:,2));
 meanP = mean(P);
-patch(P(:,1),P(:,2),'w');
+patch(P(K,1),P(K,2),'w');
 text(meanP(1),meanP(2),'G-H');
 row1 = [G(1,:)',G(2,:)',G(3,:)',-H(1,:)',-H(2,:)',-H(3,:)',-Q(1,:)',-Q(2,:)',-Q(3,:)'];
 row2 = [ones(1,3),zeros(1,length(row1)-3)];

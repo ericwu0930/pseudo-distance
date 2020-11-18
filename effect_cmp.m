@@ -1,9 +1,8 @@
 % rcim 与 qdistance效果对比
 % rcim算法
-clear;
+clear all;
 clc;
 close all;
-dbclear all;
 
 %% 定义连杆的两端点
 p1 = [0 0 0];

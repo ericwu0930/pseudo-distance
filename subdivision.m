@@ -1,5 +1,5 @@
 function [vertex, face] = subdivision(vertex, face)
-% 球面细分算法 https://zhuanlan.zhihu.com/p/32564705
+% 球面细分算法
 face_num = size(face, 1);
 vertex_num = size(vertex, 1);
 new_vertexs = zeros(face_num*3, 3);
