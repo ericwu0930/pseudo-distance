@@ -87,12 +87,23 @@ function fval=objf(theta,thetas,thetae)
 % n  the number of variables
 % dc dimension of configuration space
 % N  same generation population size
-[n,dc,N] = size(theta);
+[D,dc,N] = size(theta);
 retheta = [thetas;theta;thetae];
+% retheta   N x (dc*n)
 retheta = reshape(permute(retheta,[2 1 3]),[],N)';
 tmp = retheta(:,dc+1:end)-retheta(:,1:end-dc);
 fval = sum(tmp.*tmp,2);
+% todo: add penalty funciton
+
 end
+
+%% penalty function
+function c = constraints(theta,dc)
+% theta     variables to be solved  n x dc x N
+%% Body
+fk(theta,)
+end
+
 %% forward kinematics of manipulator
 function [x] = fk(theta,a0,l)
 % theta  Nx1 configuration space of manipulator deg
