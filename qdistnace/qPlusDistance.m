@@ -5,9 +5,11 @@ figure(2);
 G = [-2,1;
     -3,-1;
     -1,-1];
+% H = [3,5;
+%     5,4;
+%     4,2];
 H = [3,5;
-    5,4;
-    4,2];
+    5,4;];
 patch(G(:,1),G(:,2),'y')
 meanG = mean(G);
 text(meanG(1),meanG(2),'G');
@@ -23,24 +25,27 @@ Q = [0,-1;
 meanQ = mean(Q);
 patch(Q(:,1),Q(:,2),'r');
 text(meanQ(1),meanQ(2),'Q');
-P = ones(9,2);
-for i = 1:3
-    for j = 1:3
-        P((i-1)*3+j,:) = G(i,:)-H(j,:);
+[rg,cg]=size(G);
+[rh,ch]=size(H);
+[rq,cq]=size(Q);
+P = ones(rg*rh,2);
+for i = 1:rg
+    for j = 1:rh
+        P((i-1)*rh+j,:) = G(i,:)-H(j,:);
     end
 end
 K = convhull(P(:,1),P(:,2));
 meanP = mean(P);
 patch(P(K,1),P(K,2),'w');
 text(meanP(1),meanP(2),'G-H');
-row1 = [G(1,:)',G(2,:)',G(3,:)',-H(1,:)',-H(2,:)',-H(3,:)',-Q(1,:)',-Q(2,:)',-Q(3,:)'];
-row2 = [ones(1,3),zeros(1,length(row1)-3)];
-row3 = [zeros(1,3),ones(1,3),zeros(1,length(row1)-6)];
+row1 = [G',-H', -Q'];
+row2 = [ones(1,rg),zeros(1,length(row1)-rg)];
+row3 = [zeros(1,rg),ones(1,rh),zeros(1,length(row1)-rg-rh)];
 Aeq = [row1;
     row2;
     row3];
 beq = [zeros(2,1);1;1];
-f = [zeros(1,6),ones(1,3)];
+f = [zeros(1,rg+rh),ones(1,rq)];
 lb = zeros(size(f));
 [x,fval] = linprog(f,[],[],Aeq,beq,lb,[]);
 fval

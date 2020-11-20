@@ -24,6 +24,13 @@ rec4 = [rec4;rec4(1,:)];
 for i = 1:4
     plot(rec4(i:i+1,1),rec4(i:i+1,2),'r-');
 end
+obstacles(:,:,1) = rec1;
+obstacles(:,:,2) = rec2;
+obstacles(:,:,3) = rec3;
+obstacles(:,:,4) = rec4;
+Q = [0,-1;
+    sqrt(3)/2,1/2;
+    -sqrt(3)/2,1/2];
 %% initial and end position of manipulator
 base = [7 7.5];
 l = 2;
@@ -94,22 +101,43 @@ retheta = reshape(permute(retheta,[2 1 3]),[],N)';
 tmp = retheta(:,dc+1:end)-retheta(:,1:end-dc);
 fval = sum(tmp.*tmp,2);
 % todo: add penalty funciton
-
+p = zeros(N,1);
+for i = 1:N
+    p(i) = penalty(theta(:,:,i));
+end
+fval = fval+p;
 end
 
 %% penalty function
-function c = constraints(theta,dc)
-% theta     variables to be solved  n x dc x N
+function p = penalty(theta,rk)
+% theta     variables to be solved  D x dc
 %% Body
-fk(theta,)
+global obstacles;
+[D dc] = size(theta);
+p = 0;
+for i = 1:D % 遍历每一个位置
+    x = fk(theta(i,:));
+    [r c] = size(x);
+    for j = 1:r-1 % 遍历每一个连杆位置
+        [~,~,on] = size(obstacles);
+        for k = 1:on % 遍历每一个障碍物
+            [~,fval,~] = QDistance(obstacles(:,:,k),x(i:i+1,:),Q');
+            p = p+fval^2*rk;
+        end
+    end
+end
 end
 
 %% forward kinematics of manipulator
-function [x] = fk(theta,a0,l)
+function [x] = fk(theta)
 % theta  Nx1 configuration space of manipulator deg
 % a0     position of manipulator's base
 % l      the length of manipulator
+% x      N x 2 or 3
+global a0;
+global l;
 theta = theta/180*pi;
+% 2-d environment
 x = zeros(5,2);
 x(1,:) = a0(:)';
 for i = 2:5
