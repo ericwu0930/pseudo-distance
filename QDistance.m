@@ -24,7 +24,7 @@ for i=2:size(bdidx)
 end
 
 if ~BDMeet
-    if ~HaveIntersection % 稍作改造 如果没有交集则返回0
+    if ~HaveIntersection % 稍作改造 如果没有交集即符合约束则返回0
 %         f = [ones(1,QVDim), zeros(1,AlphaDim)];
 %         lb = zeros(1,QVDim+AlphaDim);
 %         beq = [zeros(1,VecDim) 1]';

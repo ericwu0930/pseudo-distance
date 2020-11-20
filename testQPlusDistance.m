@@ -38,17 +38,18 @@ K = convhull(P(:,1),P(:,2));
 meanP = mean(P);
 patch(P(K,1),P(K,2),'w');
 text(meanP(1),meanP(2),'G-H');
-row1 = [G',-H', -Q'];
-row2 = [ones(1,rg),zeros(1,length(row1)-rh)];
-row3 = [zeros(1,rg),ones(1,rh),zeros(1,length(row1)-rg-rh)];
-Aeq = [row1;
-    row2;
-    row3];
-beq = [zeros(2,1);1;1];
-f = [zeros(1,rg+rh),ones(1,rq)];
-lb = zeros(size(f));
-[x,fval] = linprog(f,[],[],Aeq,beq,lb,[]);
-fval
+% row1 = [G',-H', -Q'];
+% row2 = [ones(1,rg),zeros(1,length(row1)-rg)];
+% row3 = [zeros(1,rg),ones(1,rh),zeros(1,length(row1)-rg-rh)];
+% Aeq = [row1;
+%     row2;
+%     row3];
+% beq = [zeros(2,1);1;1];
+% f = [zeros(1,rg+rh),ones(1,rq)];
+% lb = zeros(size(f));
+% [x,fval] = linprog(f,[],[],Aeq,beq,lb,[]);
+% fval
+[~,fval,~]=QDistance(H,G,Q');
 newQ = fval*Q;
 newQ = [newQ;newQ(1,:)]
 
