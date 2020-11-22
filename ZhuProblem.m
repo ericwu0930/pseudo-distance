@@ -3,7 +3,6 @@ clc;
 close all;
 hold on;
 axis equal;
-%% Zhu's problem environment
 %% global variables declaration;
 global a0;     % base of manipulators;
 global l;      % length of link;
@@ -12,7 +11,7 @@ global dc;     % dimension of configuration;
 global rk;     % factor of penalty function;
 global Q;      % Q 
 global obstacles; % environments 
-
+%% Zhu's problem environment
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
 for i = 1:4
@@ -56,13 +55,12 @@ for i = 1:4
 end
 
 %% solve constrained nonlinear optimization
-% function to be minimized
-points = 10;
+%% initialization of de parameters
+times = 0;
+points = 100;
 dc = 4;
 D=points*dc; % number of variables
-%% initialization of de parameters
-rk = 0.5;
-c = 1.5;
+rk = 0.5;  c = 1.5; % penalty factor
 N=20;     % same generation population size
 itmax=30; % number of iterations
 F=0.8;CR=0.5; % mutation factor and crossover ratio
@@ -72,6 +70,7 @@ d=(b-a);
 basemat=repmat(int16(linspace(1,N,N)),N,1); % used later
 basej=repmat(int16(linspace(1,D,D)),N,1); % used later
 while 1
+    times = times+1;
     % random initialization of postions
     x=a+d.*rand(N,D);
     % evaluate objective for all particles
@@ -103,7 +102,9 @@ while 1
     end
     rk = c*rk;
 end
+
 %% result display
+disp(['Loop times',times,'. ','rk=',rk]);
 xbest = reshape(xbest,4,[])';
 for i = 1:size(xbest,1)
     resultp = fk(xbest(i,:));
@@ -145,7 +146,7 @@ function p = penalty(theta)
 global obstacles;
 global rk;
 global Q;
-[points ~] = size(theta);
+[points,~] = size(theta);
 p = 0;
 for i = 1:points % 遍历每一个位置
     x = fk(theta(i,:));
@@ -154,6 +155,10 @@ for i = 1:points % 遍历每一个位置
         [~,~,on] = size(obstacles);
         for k = 1:on % 遍历每一个障碍物
             [~,fval,~] = QDistance(obstacles(:,:,k),x(j:j+1,:),Q');
+            p = p+fval^2*rk;
+        end
+        for k = j+1:r-1
+            [~,fval,~] = QDistance(x(k:k+1,:),x(j:j+1,:),Q');
             p = p+fval^2*rk;
         end
     end
