@@ -69,8 +69,9 @@ a=0;b=360;
 d=(b-a);
 basemat=repmat(int16(linspace(1,N,N)),N,1); % used later
 basej=repmat(int16(linspace(1,D,D)),N,1); % used later
-while 1
+while times <= 10
     times = times+1;
+    disp(['Loop times',times,'. ','rk=',rk]);
     % random initialization of postions
     x=a+d.*rand(N,D);
     % evaluate objective for all particles
@@ -96,6 +97,12 @@ while 1
         % find best
         [fxbest,ixbest]=min(fx);
         xbest=x(ixbest,1:D);
+    end
+    for i = 1:size(xbest,1)
+        resultp = fk(xbest(i,:));
+        for j = 1:size(resultp,1)-1
+            plot(resultp(j:j+1,1),resultp(j:j+1,2),'r-');
+        end
     end
     if penalty(reshape(xbest,4,[])')<=1e-3
         break;
