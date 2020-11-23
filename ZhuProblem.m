@@ -1,7 +1,6 @@
 clear all;
 clc;
 close all;
-hold on;
 axis equal;
 %% global variables declaration;
 global a0;     % base of manipulators;
@@ -9,29 +8,17 @@ global l;      % length of link;
 global points; % points in c-space of path;
 global dc;     % dimension of configuration;
 global rk;     % factor of penalty function;
-global Q;      % Q 
-global obstacles; % environments 
+global Q;      % Q
+global obstacles; % environments
 %% Zhu's problem environment
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
-for i = 1:4
-    plot(rec1p(i:i+1,1),rec1p(i:i+1,2),'r-');
-end
 rec2 = [9 9.5;10 9.5;10 18;9 18];
 rec2p = [rec2;rec2(1,:)];
-for i = 1:4
-    plot(rec2p(i:i+1,1),rec2p(i:i+1,2),'r-');
-end
 rec3 = [6 11;7 11;7 12;6 12];
 rec3p = [rec3;rec3(1,:)];
-for i = 1:4
-    plot(rec3p(i:i+1,1),rec3p(i:i+1,2),'r-');
-end
 rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
 rec4p = [rec4;rec4(1,:)];
-for i = 1:4
-    plot(rec4p(i:i+1,1),rec4p(i:i+1,2),'r-');
-end
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
@@ -42,34 +29,28 @@ Q = [0,-1;
 %% initial and end position of manipulator
 a0 = [7 7.5];
 l = 2;
+dc = 3;
 plot(a0(1),a0(2),'ko');
-thetas = [45 0 -60 -65];
+thetas = [45 0 -60]*pi/180;
 xi = fk(thetas);
-for i = 1:4
-    plot(xi(i:i+1,1),xi(i:i+1,2),'r-')
-end
-thetae = [200 130 110 75];
+thetae = [200 130 110 75]*pi/180;
 xe = fk(thetae);
-for i = 1:4
-    plot(xe(i:i+1,1),xe(i:i+1,2),'r-')
-end
 
 %% solve constrained nonlinear optimization
 %% initialization of de parameters
 times = 0;
-points = 100;
-dc = 4;
+points = 30;
 D=points*dc; % number of variables
 rk = 0.5;  c = 1.5; % penalty factor
-N=20;     % same generation population size
+N=10;     % same generation population size
 itmax=30; % number of iterations
 F=0.8;CR=0.5; % mutation factor and crossover ratio
 % problem bounds
-a=0;b=360;
+a=0;b=pi;
 d=(b-a);
 basemat=repmat(int16(linspace(1,N,N)),N,1); % used later
 basej=repmat(int16(linspace(1,D,D)),N,1); % used later
-while times <= 10
+while times <= 25
     times = times+1;
     disp(['Loop times',times,'. ','rk=',rk]);
     % random initialization of postions
@@ -98,13 +79,36 @@ while times <= 10
         [fxbest,ixbest]=min(fx);
         xbest=x(ixbest,1:D);
     end
-    for i = 1:size(xbest,1)
-        resultp = fk(xbest(i,:));
+    % 中间结果图形展示
+    figure(times);
+    hold on;
+    axis equal;
+    for i = 1:dc
+        plot(xi(i:i+1,1),xi(i:i+1,2),'r-')
+    end
+    for i = 1:dc
+        plot(xe(i:i+1,1),xe(i:i+1,2),'r-')
+    end
+    for i = 1:4
+        plot(rec1p(i:i+1,1),rec1p(i:i+1,2),'r-');
+    end
+    for i = 1:4
+        plot(rec2p(i:i+1,1),rec2p(i:i+1,2),'r-');
+    end
+    for i = 1:4
+        plot(rec3p(i:i+1,1),rec3p(i:i+1,2),'r-');
+    end
+    for i = 1:4
+        plot(rec4p(i:i+1,1),rec4p(i:i+1,2),'r-');
+    end
+    tmp = reshape(xbest,dc,[])';
+    for i = 1:size(tmp,1)
+        resultp = fk(tmp(i,:));
         for j = 1:size(resultp,1)-1
             plot(resultp(j:j+1,1),resultp(j:j+1,2),'r-');
         end
     end
-    if penalty(reshape(xbest,4,[])')<=1e-3
+    if penalty(reshape(xbest,dc,[])')<=1e-3
         break;
     end
     rk = c*rk;
@@ -112,14 +116,13 @@ end
 
 %% result display
 disp(['Loop times',times,'. ','rk=',rk]);
-xbest = reshape(xbest,4,[])';
+xbest = reshape(xbest,dc,[])';
 for i = 1:size(xbest,1)
     resultp = fk(xbest(i,:));
     for j = 1:size(resultp,1)-1
         plot(resultp(j:j+1,1),resultp(j:j+1,2),'r-');
     end
 end
-[xbest,fxbest]
 
 
 
@@ -141,7 +144,7 @@ ksai = tmp(:,dc+1:end)-tmp(:,1:end-dc);
 fval = sum(ksai.*ksai,2);
 p = zeros(N,1);
 for i = 1:N
-    p(i) = penalty(reshape(theta(i,:),4,[])');
+    p(i) = penalty(reshape(theta(i,:),dc,[])');
 end
 fval = fval+p;
 end
@@ -180,12 +183,11 @@ function [x] = fk(theta)
 % x      N x 2 or 3
 global l;
 global a0;
-dc = length(theta);
-theta = theta/180*pi;
+global dc;
 % 2-d environment
 x = zeros(dc+1,2);
 x(1,:) = a0(:)';
-for i = 2:5
+for i = 2:dc+1
     x(i,:) = x(i-1,:)+[l*cos(theta(i-1)) l*sin(theta(i-1))];
 end
 end

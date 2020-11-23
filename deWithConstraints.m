@@ -45,9 +45,11 @@ while 1
         % find best
         [fxbest,ixbest]=min(fx);
         xbest=x(ixbest,1:D);
-        if penalty(xbest)<1e-3
-            break;
-        end
+    end
+    hold on;
+    plot(times,fxbest,'ro');
+    if penalty(xbest)<1e-3
+        break;
     end
     rk = c*rk;
 end
@@ -75,3 +77,21 @@ for i = 1:6
     res = res+idx.*p(:,i).^2*rk;
 end
 end
+
+% function fval = objf(x)
+% fval = 1/3*(x(:,1)+1).^3+x(:,2);
+% fval = fval+penalty(x);
+% end
+% 
+% function res = penalty(x)
+% global rk;
+% res = zeros(size(x,1),1);
+% p = zeros(size(x,1),2);
+% tmp = zeros(size(x,1),1);
+% p(:,1) = -x(:,1)+1;
+% p(:,2) =-x(:,2);
+% for i = 1:2
+%     idx = tmp<p(:,i);
+%     res = res+idx.*p(:,i).^2*rk;
+% end
+% end
