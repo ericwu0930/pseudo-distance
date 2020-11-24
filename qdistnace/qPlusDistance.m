@@ -39,7 +39,7 @@ meanP = mean(P);
 patch(P(K,1),P(K,2),'w');
 text(meanP(1),meanP(2),'G-H');
 row1 = [G',-H', -Q'];
-row2 = [ones(1,rg),zeros(1,length(row1)-rh)];
+row2 = [ones(1,rg),zeros(1,length(row1)-rg)];
 row3 = [zeros(1,rg),ones(1,rh),zeros(1,length(row1)-rg-rh)];
 Aeq = [row1;
     row2;

@@ -39,7 +39,7 @@ xe = fk(thetae);
 %% solve constrained nonlinear optimization
 %% initialization of de parameters
 times = 0;
-points = 30;
+points = 20;
 D=points*dc; % number of variables
 rk = 0.5;  c = 1.5; % penalty factor
 N=10;     % same generation population size
@@ -50,6 +50,7 @@ a=0;b=pi;
 d=(b-a);
 basemat=repmat(int16(linspace(1,N,N)),N,1); % used later
 basej=repmat(int16(linspace(1,D,D)),N,1); % used later
+cmap = rand(20,3);
 while times <= 25
     times = times+1;
     disp(['Loop times',times,'. ','rk=',rk]);
@@ -105,7 +106,7 @@ while times <= 25
     for i = 1:size(tmp,1)
         resultp = fk(tmp(i,:));
         for j = 1:size(resultp,1)-1
-            plot(resultp(j:j+1,1),resultp(j:j+1,2),'r-');
+            plot(resultp(j:j+1,1),resultp(j:j+1,2),'-','color',cmap(i,:));
         end
     end
     if penalty(reshape(xbest,dc,[])')<=1e-3
@@ -164,7 +165,7 @@ for i = 1:points % 遍历每一个位置
     for j = 1:r-1 % 遍历每一个连杆位置
         [~,~,on] = size(obstacles);
         for k = 1:on % 遍历每一个障碍物
-            [~,fval,~] = QDistance(obstacles(:,:,k),x(j:j+1,:),Q');
+            [x,fval,xx] = QDistance(obstacles(:,:,k),x(j:j+1,:),Q');
             p = p+fval^2*rk;
         end
         for k = j+1:r-1
