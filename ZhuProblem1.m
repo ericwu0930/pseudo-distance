@@ -99,14 +99,14 @@ for i = 2:steps+1
         [~,~,on]=size(obstacles);
         % for test
         for k =1:on
-            [~,fval,~] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
+            [~,fval] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
             if fval < epsilon % 如果有碰撞
                 isCol = true;
                 return;
             end
         end
         for k = j+2:r-1  % avoid self-conllision
-            [~,fval,~] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
+            [~,fval] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
             if fval < epsilon
                 isCol = true;
                 return;
@@ -200,7 +200,7 @@ for i = 1:N
     for j=1:r-1
         [~,~,on]=size(obstacles);
         for k =1:on
-            [xstar,fval,~] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
+            [xstar,fval] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
             if fval < epsilon % 如果有碰撞
                 p(i,:) = p(i,:)+fval^2*rk;
             elseif fval == epsilon % active constraint
@@ -212,7 +212,7 @@ for i = 1:N
             end
         end
         for k = j+2:r-1  % avoid self-conllision
-            [~,fval,~] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
+            [~,fval] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
             fval = min([0,fval]);
             p(i,:) = p(i,:)+fval^2*rk;
         end
