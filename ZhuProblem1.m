@@ -86,7 +86,7 @@ cols(1,:) = thetas;
 % figure;
 % hold on;
 % axis equal;
-
+isCol = false ;
 for i = 2:steps+1
     cols(i,:)=cols(i-1,:)+dtheta;
     x = fk(cols(i,:));
@@ -94,7 +94,7 @@ for i = 2:steps+1
     % for test
 %     plotEnv;
 %     handle = plotLink(x);
-    
+  
     for j=1:r-1
         [~,~,on]=size(obstacles);
         % for test
