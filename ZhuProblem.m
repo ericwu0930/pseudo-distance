@@ -33,7 +33,7 @@ dc = 3;
 plot(a0(1),a0(2),'ko');
 thetas = [45 0 -60]*pi/180;
 xi = fk(thetas);
-thetae = [200 130 110 75]*pi/180;
+thetae = [200 130 110]*pi/180;
 xe = fk(thetae);
 
 %% solve constrained nonlinear optimization
@@ -165,13 +165,13 @@ for i = 1:points % 遍历每一个位置
     for j = 1:r-1 % 遍历每一个连杆位置
         [~,~,on] = size(obstacles);
         for k = 1:on % 遍历每一个障碍物
-            [x,fval,xx] = QDistance(obstacles(:,:,k),x(j:j+1,:),Q');
+            [~,fval,~] = QDistance(obstacles(:,:,k),x(j:j+1,:),Q');
             p = p+fval^2*rk;
         end
-        for k = j+1:r-1
-            [~,fval,~] = QDistance(x(k:k+1,:),x(j:j+1,:),Q');
-            p = p+fval^2*rk;
-        end
+%         for k = j+1:r-1
+%             [~,fval,~] = QDistance(x(k:k+1,:),x(j:j+1,:),Q');
+%             p = p+fval^2*rk;
+%         end
     end
 end
 end

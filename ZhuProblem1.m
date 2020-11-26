@@ -1,13 +1,10 @@
 clear all;
 clc;
 close all;
-axis equal;
 %% global variables declaration;
 global a0;     % base of manipulators;
 global l;      % length of link;
-global points; % points in c-space of path;
 global dc;     % dimension of configuration;
-global rk;     % factor of penalty function;
 global Q;      % Q
 global obstacles; % environments
 %% Zhu's problem environment
@@ -30,50 +27,210 @@ Q = [0,-1;
 a0 = [7 7.5];
 l = 2;
 dc = 3;
-plot(a0(1),a0(2),'ko');
 thetas = [45 0 -60]*pi/180;
-xi = fk(thetas);
-thetae = [200 130 110 75]*pi/180;
-xe = fk(thetae);
+thetae = [200 130 110]*pi/180;
+
+
+%% path planning
+path = detAndGen(thetas,thetae);
+
+%% plot environment
+function [] = plotEnv
+global a0;
+global obstacles;
+figure;
+hold on;
+axis equal;
+plot(a0(1),a0(2),'ko');
+for i = 1:size(obstacles,3)
+    rec = obstacles(:,:,i);
+    for j = 1:size(rec,1)-1
+        plot(rec(j:j+1,1),rec(j:j+1,2),'r-');
+    end
+    plot([rec(end,1),rec(1,1)],[rec(end,2),rec(1,2)],'r-');
+end
+end
+
+function handle = plotLink(theta)
+plotEnv;
+x=fk(theta);
+for i = 1:size(x,1)-1
+    handle(i)=plot(x(i:i+1,1),x(i:i+1,2),'r-');
+end
+end
+
+%% detect collision and generate new middle point
+function path = detAndGen(thetas,thetae)
+thetas = thetas(:)';
+thetae = thetae(:)';
+if coldet(thetas,thetae) == 1
+    [thetam,~] = de(thetas,thetae);
+    path1=detAndGen(thetas,thetam);
+    path2=detAndGen(thetam,thetae);
+    path=[path1;path2(2:end,:)];
+else
+    path = [thetas;thetae];
+end
+end
+
+%% collision detection
+function isCol = coldet(thetas,thetae)
+global obstacles;
+global Q;
+epsilon = 0;
+steps = 100;
+dtheta = (thetae-thetas)/steps;
+cols = zeros(steps+1,size(thetas,2));
+cols(1,:) = thetas;
+% for test
+% figure;
+% hold on;
+% axis equal;
+
+for i = 2:steps+1
+    cols(i,:)=cols(i-1,:)+dtheta;
+    x = fk(cols(i,:));
+    [r,~]=size(x);
+    % for test
+%     plotEnv;
+%     handle = plotLink(x);
+    
+    for j=1:r-1
+        [~,~,on]=size(obstacles);
+        % for test
+        for k =1:on
+            [~,fval,~] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
+            if fval < epsilon % 如果有碰撞
+                isCol = true;
+                return;
+            end
+        end
+        for k = j+2:r-1  % avoid self-conllision
+            [~,fval,~] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
+            if fval < epsilon
+                isCol = true;
+                return;
+            end
+        end
+    end
+    % for test
+%     delete(handle);
+    
+end
+end
+
+%% DE Algorithm
+function [thetam,fval] = de(thetas,thetae)
+global rk;
+global c;
+rk = 0.5; c = 1.5;
+%% function to be minimized
+D=3; % number of variables
+%% initialization of de parameters
+N=20;     % same generation population size
+itmax=30; % number of iterations
+F=0.8;CR=0.5; % mutation factor and crossover ratio
+% problem bounds
+a=0;
+b=2*pi;
+d=(b-a);
+basemat=repmat(int16(linspace(1,N,N)),N,1); % used later
+basej=repmat(int16(linspace(1,D,D)),N,1); % used later
+while 1
+    % random initialization of postions
+    x=a+d.*rand(N,D);
+    % evaluate objective for all particles
+    fx=objf(x,thetas,thetae);
+    % find bset
+    [fxbest,ixbest] = min(fx);
+    xbest = x(ixbest,1:D);
+    %% iterate
+    for it=1:itmax
+        permat=bsxfun(@(x,y) x(randperm(y(1))),basemat',N(ones(N,1)))';
+        % generate donors by mutation
+        v(1:N,1:D)=repmat(xbest,N,1)+F*(x(permat(1:N,1),1:D)-x(permat(1:N,2),1:D));
+        % perform recobination
+        r=repmat(randi([1 D],N,1),1,D);
+        muv=((rand(N,D)<CR)+(basej==r))~=0;
+        mux=1-muv;
+        u(1:N,1:D)=x(1:N,1:D).*mux(1:N,1:D)+v(1:N,1:D).*muv(1:N,1:D);
+        % greedy selection
+        fu=objf(u,thetas,thetae);
+        idx=fu<fx;
+        fx(idx)=fu(idx);
+        x(idx,1:D)=u(idx,1:D);
+        % find best
+        [fxbest,ixbest]=min(fx);
+        xbest=x(ixbest,1:D);
+    end
+    if penalty(xbest,thetas,thetae) <= 1e-5
+        break;
+    end
+    rk=c*rk;
+end
+thetam = xbest;
+fval = fxbest;
+end
 
 function fval = objf(thetam,thetas,thetae)
-fval = norm(thetam-thetas)+norm(thetam-thetae);
-
+fval = sum((thetam-thetas).^2,2).^(1/2)+sum((thetam-thetae).^2,2).^(1/2);
+fval = fval+penalty(thetam,thetas,thetae);
 end
 
 function p = penalty(thetam,thetas,thetae)
+global rk;
 global obstacles;
-global epsilon; % safety margin
+global Q;
+epsilon = 0;
 % thetam N*dc
 [N,~]=size(thetam);
 p = zeros(N,1);
+% for test 
+% figure;
+% hold on;
+% axis equal;
+
 for i = 1:N
     x=fk(thetam(i,:));
+    % for test
+%     plotEnv;
+%     handle = plotLink(x);
+    
     [r,~]=size(x);
     for j=1:r-1
-        [~,~,on]=size(x);
+        [~,~,on]=size(obstacles);
         for k =1:on
-            [xstar,fval,~] = QDistance(x(j:j+1,:),obstacles(:,:,k),Q');
+            [xstar,fval,~] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
             if fval < epsilon % 如果有碰撞
-                p = p+fval^2*rk;
+                p(i,:) = p(i,:)+fval^2*rk;
             elseif fval == epsilon % active constraint
                 a = thetam-thetas;
                 b = thetam-thetae;
                 z = a/norm(a)+b/norm(b);
-                gradient = grand(x(j:j+1,:),obstacles(:,:,k),Q,xstar,theta,j);
-                p = p+
+                gradient = grad(x(j:j+1,:),obstacles(:,:,k),Q,xstar,thetam,j);
+                p(i,:)=p(i,:)+max([-gradient'*z,0])^2*rk;
             end
         end
-        for k = j+1:r-1  % avoid self-conllision
-            [~,fval,~] = QDistance(x(k:k+1,:),x(j:j+1,:),Q');
-            p = p+fval^2*rk;
+        for k = j+2:r-1  % avoid self-conllision
+            [~,fval,~] = QDistanceNew(x(k:k+1,:),x(j:j+1,:),Q);
+            fval = min([0,fval]);
+            p(i,:) = p(i,:)+fval^2*rk;
         end
     end
+    % for test
+%     delete(handle);
+    
 end
 end
 
 %% gradient
 function dd = grad(VA,VB,VQ,xstar,theta,j)
+% VA vertices of A
+% VB vertices of B
+% VQ vertices of Q
+% xstar best solution
+% theta joint configuration of link
+% j jth link
 global l;
 [rq,~]=size(VQ);
 [ra,~]=size(VA);
@@ -84,9 +241,9 @@ dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
     0,0,l*cos(theta(2)),l*cos(theta(2))];
 dPA3 = [0,0,0,-l*sin(theta(3));
     0,0,0,l*cos(theta(3))];
-dPA1=dPA1(:,j:j+1);
-dPA2=dPA2(:,j:j+1);
-dPA3=dPA3(:,j:j+1);
+dPA1=dPA1(:,j);
+dPA2=dPA2(:,j);
+dPA3=dPA3(:,j);
 
 anz=xstar(1:ra,:)~=0;
 bnz=xstar(ra+1:ra+rb,:)~=0;
