@@ -38,7 +38,6 @@ path = detAndGen(thetas,thetae);
 function [] = plotEnv
 global a0;
 global obstacles;
-figure;
 hold on;
 axis equal;
 plot(a0(1),a0(2),'ko');
@@ -53,9 +52,12 @@ end
 
 function handle = plotLink(theta)
 plotEnv;
-x=fk(theta);
-for i = 1:size(x,1)-1
-    handle(i)=plot(x(i:i+1,1),x(i:i+1,2),'r-');
+[r,~] = size(theta);
+for i = 1:r
+    x=fk(theta(i,:));
+    for j = 1:size(x,1)-1
+        handle(i)=plot(x(j:j+1,1),x(j:j+1,2),'r-');
+    end
 end
 end
 
@@ -65,6 +67,7 @@ thetas = thetas(:)';
 thetae = thetae(:)';
 if coldet(thetas,thetae) == 1
     [thetam,~] = de(thetas,thetae);
+    plotLink([thetas;thetam;thetae]);
     path1=detAndGen(thetas,thetam);
     path2=detAndGen(thetam,thetae);
     path=[path1;path2(2:end,:)];
@@ -78,7 +81,7 @@ function isCol = coldet(thetas,thetae)
 global obstacles;
 global Q;
 epsilon = 0;
-steps = 100;
+steps = 50;
 dtheta = (thetae-thetas)/steps;
 cols = zeros(steps+1,size(thetas,2));
 cols(1,:) = thetas;
@@ -88,13 +91,16 @@ cols(1,:) = thetas;
 % axis equal;
 isCol = false ;
 for i = 2:steps+1
+    cols(i,:) = cols(i-1,:)+dtheta;
+end
+for i = 2:steps+1
     cols(i,:)=cols(i-1,:)+dtheta;
     x = fk(cols(i,:));
     [r,~]=size(x);
     % for test
-%     plotEnv;
-%     handle = plotLink(x);
-  
+    %     plotEnv;
+    %     handle = plotLink(x);
+    
     for j=1:r-1
         [~,~,on]=size(obstacles);
         % for test
@@ -114,7 +120,7 @@ for i = 2:steps+1
         end
     end
     % for test
-%     delete(handle);
+    %     delete(handle);
     
 end
 end
@@ -182,33 +188,35 @@ global rk;
 global obstacles;
 global Q;
 epsilon = 0;
-% thetam N*dc
 [N,~]=size(thetam);
 p = zeros(N,1);
-% for test 
-% figure;
-% hold on;
-% axis equal;
 
-for i = 1:N
+for i = 1:N    %遍历每一个子代
+    a = thetam(i,:)-thetas;
+    b = thetam(i,:)-thetae;
     x=fk(thetam(i,:));
-    % for test
-%     plotEnv;
-%     handle = plotLink(x);
-    
     [r,~]=size(x);
-    for j=1:r-1
+    minDist = inf;
+    minLink = [];
+    minObs = [];
+    minX = [];
+    minTheta = [];
+    minJ = [];
+    for j=1:r-1  
         [~,~,on]=size(obstacles);
         for k =1:on
             [xstar,fval] = QDistanceNew(x(j:j+1,:),obstacles(:,:,k),Q);
             if fval < epsilon % 如果有碰撞
                 p(i,:) = p(i,:)+fval^2*rk;
-            elseif fval == epsilon % active constraint
-                a = thetam-thetas;
-                b = thetam-thetae;
-                z = a/norm(a)+b/norm(b);
-                gradient = grad(x(j:j+1,:),obstacles(:,:,k),Q,xstar,thetam,j);
-                p(i,:)=p(i,:)+max([-gradient'*z,0])^2*rk;
+            else
+                if minDist > fval
+                    minDist = fval;
+                    minLink = x(j:j+1,:);
+                    minObs = obstacles(:,:,k);
+                    minX = xstar;
+                    minTheta = thetam(i,:);
+                    minJ = j;
+                end
             end
         end
         for k = j+2:r-1  % avoid self-conllision
@@ -217,8 +225,14 @@ for i = 1:N
             p(i,:) = p(i,:)+fval^2*rk;
         end
     end
+    if p(i,:) == 0
+        dd = grad(minLink,minObs,Q,minX,minTheta,minJ);
+        if (a*dd > 0 && b*dd  < 0) || (a*dd < 0 && b*dd > 0) || norm(dd)<1e-4
+            p(i,:) = rk*5;
+        end
+    end
     % for test
-%     delete(handle);
+    %     delete(handle);
     
 end
 end
@@ -232,7 +246,7 @@ function dd = grad(VA,VB,VQ,xstar,theta,j)
 % theta joint configuration of link
 % j jth link
 global l;
-[rq,~]=size(VQ);
+[~,cq]=size(VQ);
 [ra,~]=size(VA);
 [rb,~]=size(VB);
 dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
@@ -241,24 +255,24 @@ dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
     0,0,l*cos(theta(2)),l*cos(theta(2))];
 dPA3 = [0,0,0,-l*sin(theta(3));
     0,0,0,l*cos(theta(3))];
-dPA1=dPA1(:,j);
-dPA2=dPA2(:,j);
-dPA3=dPA3(:,j);
+dPA1=dPA1(:,j:j+1);
+dPA2=dPA2(:,j:j+1);
+dPA3=dPA3(:,j:j+1);
 
 anz=xstar(1:ra,:)~=0;
 bnz=xstar(ra+1:ra+rb,:)~=0;
 qnz=xstar(rb+ra+1:end,:)~=0;
-PQ = VQ(qnz)';
-tmp = VA(anz);
+PQ = VQ(qnz,:)';
+tmp = VA(anz,:);
 PA=tmp(2:end,:)-tmp(1,:);
 PA=PA';
-tmp = VB(bnz);
+tmp = VB(bnz,:);
 PB=tmp(2:end,:)-tmp(1,:);
 PB=PB';
 astar = xstar(anz);
-dd(1,:)=eye(size(PQ,2))*inv([PQ,-PA,PB])*(dPA1(:,anz)*astar);
-dd(2,:)=eye(size(PQ,2))*inv([PQ,-PA,PB])*(dPA2(:,anz)*astar);
-dd(3,:)=eye(size(PQ,2))*inv([PQ,-PA,PB])*(dPA3(:,anz)*astar);
+dd(1,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(dPA1(:,anz)*astar);
+dd(2,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(dPA2(:,anz)*astar);
+dd(3,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(dPA3(:,anz)*astar);
 end
 
 %% forward kinematics of manipulator
