@@ -605,9 +605,9 @@ while flag1==0,
                 near_cost = new_tree(reduced_idx(j),dim+2);
                 lcost = line_cost(new_tree(reduced_idx(j),:),new_point,dim);
                 if near_cost > min_cost + lcost ...
-                        && collision(new_tree(reduced_idx(j),:),new_node,world,dim)
+                        && collision(new_tree(reduced_idx(j),:),new_node,world,dim) % error ==0
                     before = new_tree(reduced_idx(j),dim+3)
-                    new_tree(reduced_idx(j),dim+3) = new_node_idx;
+                    new_tree(reduced_idx(j),dim+3) = new_node_idx; % error : add new_tree(reduced_idx,dim+2) = min_cost+lcost;
                     after = new_tree(reduced_idx(j),dim+3)
                 end
                 

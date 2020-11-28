@@ -1,3 +1,4 @@
+% rrt* for Zhu Problem
 close all;
 clear all;
 %% Zhu's problem environment
@@ -26,28 +27,85 @@ Q = [0,-1;
 %% initial and end position of manipulator
 a0 = [7 7.5];
 l = 2;
-start = [45 0 -60]*pi/180;
+source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
-% x  total_dist parent
-start_node = [start,0,0,0];
-end_node = [goal,0,0,0];
-tree = start_node;
+stepsize = 0.2;
+disTh = 0.2;
+maxFailedAttempts = 10000;
+display = true;
+radius = 0.4;
 dc = size(start,2);
-numPaths = 0;
-samples = 4000;
-segmentLength = 0.2;
-radius = 0.3;
-
-
 
 tic
-if ( (norm(start_node(1:dc)-end_node(1:dc))<segmentLength )...
-        &&(collision(start_node,end_node,world,dc)==0) )
-    path = [start_node;end_node];
-else
-    for i = 1:samples
-        flag = 0;
-        [tree,flag] = extendTree(tree,end_node,segmentLength,radius,flag);
+RRTree = [source 0 -1];
+failedAttempts = 0;
+counter = 0;
+pathFound = false;
+while failedAttempts<=maxFailedAttempts
+    if rand < 0.3
+        sample = rand(1,dc).* size(map);
+    else
+        sample = goal;
+    end
+    [A, I] = min(dist(RRTree(:,1:dc),sample),[],1);
+    closestNode = RRTree(I(1),1:dc);
+    dir = (sample - closestNode )/norm(sample - closestNode);
+    newPoint = double(int32(closestNode + stepsize * dir));
+    if ~checkPath(closestNode(1:dc), newPoint, map)
+        failedAttempts=failedAttempts+1;
+        % todo fix here
+        continue;
+    end
+    
+    if dist(newPoint,goal)<disTh
+        pathFound = true;
+        break;
+    end
+    [A,I2] = min(dist(RRTree(:,1:dc),newPoint),[],1);
+    if dist(newPoint,RRTree(I2(1),1:dc))<disTh
+        failedAttempts=failedAttempts+1;
+        continue;
+    end
+    minCost = A+RRTree(I,dc+1);
+    minParentIdx = I;
+    
+    distCols = dist(RRTree(:,1:dc),newPoint);
+    nearIdx = find(distCols<=radius);
+    sizeNear = size(nearIdx,1);
+    if sizeNear > 1
+        for i =1:sizeNear-1
+            nowNode = RRTree(nearIdx(i),:);
+            nowPoint = RRTree(nearIdx(i),1:dc);
+            if checkPath(newPoint,nowPoint,map)
+                costNear = nowNode(dc+1)+dist(nowPoint,newPoint);
+                if costNear < minCost
+                    minCost = costNear;
+                    minParentIdx = nearIdx(i);
+                end
+            end
+        end
+    end
+    newNode = [newPoint,minCost,minParentIdx];
+    RRTree = [RRTree;newNode];
+    newNodeIdx = size(RRTree,1);
+    
+    if sizeNear > 1
+        reducedIdx = nearIdx;
+        for i =1:sizeNear
+            reducedNode = RRTree(reducedIdx(i),:);
+            reducedPoint = reducedNode(1:dc);
+            nearCost = reducedNode(dc+1);
+            newLine = dist(reducedPoint,newPoint);
+            if nearCost > minCost + newLine && checkPath(reducedPoint,newPoint,map)
+                RRTree(reducedIdx(i),dc+2) = newNodeIdx;
+                RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+            end
+        end
+    end
+    failedAttempts=0;
+    if display
+        line([closestNode(2);newPoint(2)],[closestNode(1);newPoint(1)]);
+        counter=counter+1;M(counter)=getframe;
     end
 end
 toc
@@ -63,7 +121,7 @@ while flag1==0
     dir = (random_point-tree(idx,1:dc));
     new_point = tree(idx,1:dc) + dir/norm(dir)*segmentLength;
     
-    min_cost = distanceCost(tree(idx,1:dc),new_point);
+    min_cost = distanceCost(tree(idx,1:dc),new_point)+tree(idx,dc+2);
     new_node =[new_point,0,min_cost,idx];
     
     if checkPath(new_node,tree(idx,:)) == 0
@@ -94,7 +152,7 @@ while flag1==0
                     reduced_point = reduced_node(1:dc);
                     near_cost = reduced_node(dc+2);
                     newLine = distanceCost(reduced_point,new_point);
-                    if near_cost > min_cost + newLine && checkPath(reduced_node,near_node) ==0
+                    if near_cost > min_cost + newLine && checkPath(reduced_node,new_node) ==0
                         new_tree(reduced_idx(i),dim+3) = new_node_idx;
                         new_tree(reduced_idx(i),dim+2) = min_cost+newLine;
                     end

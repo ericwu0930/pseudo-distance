@@ -1,3 +1,4 @@
+% rrt for Zhu Problem
 close all;
 clear all;
 %% Zhu's problem environment
@@ -5,11 +6,11 @@ global obstacles;
 global a0;
 global dc;
 global l;
-rec1 = [9 0;10 0;10 6;9 6];
-% rec1 = [9 0;10 0;10 8.5;9 8.5];
+% rec1 = [9 0;10 0;10 6;9 6];
+rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
-rec2 = [9 12;10 12;10 20;9 20];
-% rec2 = [9 9.5;10 9.5;10 18;9 18];
+% rec2 = [9 12;10 12;10 20;9 20];
+rec2 = [9 10.5;10 10.5;10 18;9 18];
 rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
 rec3p = [rec3;rec3(1,:)];
@@ -47,7 +48,7 @@ while failedAttempts<=maxFailedAttempts
     closestNode = RRTree(I(1),1:dc);
     dir = (sample - closestNode )/norm(sample - closestNode);
     newPoint = closestNode + stepsize * dir;
-    if det(newPoint) == 1
+    if checkPath(newPoint,closestNode) == 0
         failedAttempts=failedAttempts+1;
         % todo fix here
         continue;
@@ -56,11 +57,7 @@ while failedAttempts<=maxFailedAttempts
         pathFound = true;
         break;
     end
-    [A,I2] = min(distanceCost(RRTree(:,1:dc),newPoint),[],1);
-    if distanceCost(newPoint,RRTree(I2(1),1:dc))<disTh
-        failedAttempts=failedAttempts+1;
-        continue;
-    end
+    
     RRTree = [RRTree;newPoint I];
     failedAttempts=0; 
 end
@@ -77,15 +74,33 @@ for i =1:length(path)-1
     pathLength = pathLength+distanceCost(path(i,1:dc),path(i+1,1:dc));
 end
 
+plotLink(a0,l,path,obstacles);
+fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
+
+
 if ~pathFound
     error('no path found. maximum attempts reached'); 
 end
 
 toc
 
+function feasible = checkPath(node,parent)
+global dc;
+p1 = parent(1:dc);
+p2 = node(1:dc);
+
+feasible = 1;
+dir = (p2-p1)/norm(p2-p1);
+for i=0:0.5:sqrt(sum((p2-p1).^2))
+    feasible = ~det(p1+i*dir);
+    if feasible == 0
+        return
+    end
+end
+end
+
 function isCols = det(config)
 global obstacles;
-
 x = fk(config);
 [r,~] = size(x);
 isCols = 0;
