@@ -5,6 +5,7 @@ global obstacles;
 global a0;
 global dc;
 global l;
+global Q;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
@@ -37,21 +38,31 @@ RRTree = [source -1];
 failedAttempts = 0;
 counter = 0;
 pathFound = false;
+toGoal = false;
 while failedAttempts<=maxFailedAttempts
     if rand < 0.3
         sample = rand(1,dc).* [pi*2 pi*2 pi*2]; 
+        toGoal = false;
     else
         sample = goal;
+        toGoal = true;
     end
     [A, I] = min(distanceCost(RRTree(:,1:dc),sample),[],1);
     closestNode = RRTree(I(1),1:dc);
     dir = (sample - closestNode )/norm(sample - closestNode);
     newPoint = closestNode + stepsize * dir;
+    [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
+    if feasible == 0
+        % 是否加个判断在哪一点发生的碰撞
+        if toGoal == true
+           newPoint = getNewPoint(colPoint,cstep*3/4);
+        end
+    end
     if checkPath(newPoint,closestNode) == 0
         failedAttempts=failedAttempts+1;
-        % todo fix here
         continue;
     end
+    
     if distanceCost(newPoint,goal)<disTh
         pathFound = true;
         break;
@@ -84,16 +95,19 @@ end
 
 toc
 
-function feasible = checkPath(node,parent)
+function [feasible,colPoint,step] = checkPath(node,parent)
 global dc;
+step = 0;
 p1 = parent(1:dc);
 p2 = node(1:dc);
-
+colPoint = []; 
 feasible = 1;
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))
     feasible = ~det(p1+i*dir);
     if feasible == 0
+        colPoint = p1+i*dir;
+        step = i;
         return
     end
 end
@@ -138,6 +152,90 @@ for i = 2:dc+1
 end
 end
 
+function newPoint = getNewPoint(point,cstep)
+%% 通过Q距离的微分得到新的点
+global obstacles;
+global Q;
+x = fk(point);
+dd = 0;
+for i = 1:size(x,1)-1
+    for j = 1:size(obstacles,3)
+        [xstar,fval,qe]=QDistanceNew(x(i:i+1,:),obstacles(:,:,j),Q);
+        if fval<=0
+            dd = dd + gradN(x(i:i+1,:),obstacles(:,:,j),Q,xstar,point,i,qe);
+        end
+    end
+end
+dd = dd(:)';
+newPoint = point+cstep*dd/norm(dd);
+end
+
+function dd = gradN(VA,VB,VQ,xstar,theta,j,qe)
+global l;
+[~,cq]=size(VQ);
+[ra,~]=size(VA);
+[rb,~]=size(VB);
+dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
+    0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
+dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
+    0,0,l*cos(theta(2)),l*cos(theta(2))];
+dPA3 = [0,0,0,-l*sin(theta(3));
+    0,0,0,l*cos(theta(3))];
+dPA1=dPA1(:,j:j+1);
+dPA2=dPA2(:,j:j+1);
+dPA3=dPA3(:,j:j+1);
+
+anz=xstar(1:ra,:)~=0;
+bnz=xstar(ra+1:ra+rb,:)~=0;
+PQ = VQ(qe,:)';
+tmp = VA(anz,:);
+PA=tmp(2:end,:)-tmp(1,:);
+PA=PA';
+tmp = VB(bnz,:);
+PB=tmp(2:end,:)-tmp(1,:);
+PB=PB';
+astar = xstar(anz);
+dd(1,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
+dd(2,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
+dd(3,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
+end
+
+function dd = gradP(VA,VB,VQ,xstar,theta,j)
+% VA vertices of A
+% VB vertices of B
+% VQ vertices of Q
+% xstar best solution
+% theta joint configuration of link
+% j jth link
+global l;
+[~,cq]=size(VQ);
+[ra,~]=size(VA);
+[rb,~]=size(VB);
+dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
+    0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
+dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
+    0,0,l*cos(theta(2)),l*cos(theta(2))];
+dPA3 = [0,0,0,-l*sin(theta(3));
+    0,0,0,l*cos(theta(3))];
+dPA1=dPA1(:,j:j+1);
+dPA2=dPA2(:,j:j+1);
+dPA3=dPA3(:,j:j+1);
+
+anz=xstar(1:ra,:)~=0;
+bnz=xstar(ra+1:ra+rb,:)~=0;
+qnz=xstar(rb+ra+1:end,:)~=0;
+PQ = VQ(qnz,:)';
+tmp = VA(anz,:);
+PA=tmp(2:end,:)-tmp(1,:);
+PA=PA';
+tmp = VB(bnz,:);
+PB=tmp(2:end,:)-tmp(1,:);
+PB=PB';
+astar = xstar(anz);
+dd(1,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
+dd(2,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
+dd(3,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
+end
 
 function h = distanceCost(a,b)
 h = sum((a-b).^2,2).^(1/2);

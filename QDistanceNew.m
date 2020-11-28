@@ -1,4 +1,5 @@
-function [rho,fval] = QDistanceNew(A,B,Q)
+function [rho,fval,qe] = QDistanceNew(A,B,Q)
+qe = [];
 isCol = GJK(A,B);
 [ra,ca]=size(A);
 [rb,~]=size(B);
@@ -29,6 +30,7 @@ else
         if(fval>maxFval)
             maxX = x;
             maxFval = fval;
+            qe = i;
         end
     end
     rho=maxX;
