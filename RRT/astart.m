@@ -1,4 +1,4 @@
-% © Rahul Kala, IIIT Allahabad, Creative Commons Attribution-ShareAlike 4.0 International License. 
+% ï¿½ Rahul Kala, IIIT Allahabad, Creative Commons Attribution-ShareAlike 4.0 International License. 
 % The use of this code, its parts and all the materials in the text; creation of derivatives and their publication; and sharing the code publically is permitted without permission. 
 
 % Please cite the work in all materials as: R. Kala (2014) Code for Robot Path Planning using Rapidly-exploring Random Trees, Indian Institute of Information Technology Allahabad, Available at: http://rkala.in/codes.html
@@ -22,7 +22,7 @@ failedAttempts=0;
 counter=0;
 pathFound=false;
 while failedAttempts<=maxFailedAttempts  % loop to grow RRTs
-    if rand < 0.5, 
+    if rand < 0.5
         sample=rand(1,2) .* size(map); % random sample
     else
         sample=goal; % sample taken as goal to bias tree generation to goal
