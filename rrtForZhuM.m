@@ -1,5 +1,5 @@
 % rrt for Zhu Problem
-clear all;
+% clear all;
 %% Zhu's problem environment
 global obstacles;
 global a0;
@@ -58,7 +58,7 @@ while failedAttempts<=maxFailedAttempts
            newPoint = getNewPoint(colPoint,cstep*3/4);
         end
     end
-    if checkPath(newPoint,closestNode) == 0
+    if det(newPoint) == 1
         failedAttempts=failedAttempts+1;
         continue;
     end

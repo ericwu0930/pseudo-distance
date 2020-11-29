@@ -1,5 +1,5 @@
 % rrt for Zhu Problem
-clear all;
+% clear all;
 %% Zhu's problem environment
 global obstacles;
 global a0;
@@ -81,8 +81,6 @@ fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
 if ~pathFound
     error('no path found. maximum attempts reached'); 
 end
-
-toc
 
 function feasible = checkPath(node,parent)
 global dc;
