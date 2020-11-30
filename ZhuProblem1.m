@@ -10,7 +10,7 @@ global obstacles; % environments
 %% Zhu's problem environment
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
-rec2 = [9 9.5;10 9.5;10 18;9 18];
+rec2 = [9 10.5;10 10.5;10 18;9 18];
 rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
 rec3p = [rec3;rec3(1,:)];
@@ -134,7 +134,7 @@ rk = 0.5; c = 1.5;
 D=3; % number of variables
 %% initialization of de parameters
 N=20;     % same generation population size
-itmax=30; % number of iterations
+itmax=15; % number of iterations
 F=0.8;CR=0.5; % mutation factor and crossover ratio
 % problem bounds
 a=0;
