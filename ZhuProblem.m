@@ -13,7 +13,7 @@ global obstacles; % environments
 %% Zhu's problem environment
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 rec1p = [rec1;rec1(1,:)];
-rec2 = [9 9.5;10 9.5;10 18;9 18];
+rec2 = [9 10.5;10 10.5;10 18;9 18];
 rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
 rec3p = [rec3;rec3(1,:)];

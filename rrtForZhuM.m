@@ -177,6 +177,10 @@ global l;
 [~,cq]=size(VQ);
 [ra,~]=size(VA);
 [rb,~]=size(VB);
+if sum(xstar~=0) ~= cq+2
+    dd = 0;
+    return;
+end
 dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
     0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
 dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
@@ -213,6 +217,10 @@ global l;
 [~,cq]=size(VQ);
 [ra,~]=size(VA);
 [rb,~]=size(VB);
+if sum(xstar~=0) ~= cq+2
+    dd = 0;
+    return;
+end
 dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
     0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
 dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
