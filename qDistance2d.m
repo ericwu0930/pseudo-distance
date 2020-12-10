@@ -1,6 +1,6 @@
-function [rho,fval,qe] = QDistanceNew(A,B,Q)
+function [rho,fval,qe] = qDistance2d(A,B,Q)
 qe = [];
-isCol = GJK(A,B);
+isCol = gjk2d(A,B);
 [ra,ca]=size(A);
 [rb,~]=size(B);
 [rq,~]=size(Q);

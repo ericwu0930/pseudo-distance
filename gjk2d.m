@@ -1,4 +1,4 @@
-function isCol = gjk(v1,v2)
+function isCol = gjk2d(v1,v2)
 iterCount = 0;
 idx = 1;
 p1 = mean(v1);

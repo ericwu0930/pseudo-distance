@@ -17,9 +17,9 @@ plot(a0(1),a0(2),'ko');
 for i = 1:size(obstacles,3)
     rec = obstacles(:,:,i);
     for j = 1:size(rec,1)-1
-        plot(rec(j:j+1,1),rec(j:j+1,2),'r-');
+        plot(rec(j:j+1,1),rec(j:j+1,2),'k-');
     end
-    plot([rec(end,1),rec(1,1)],[rec(end,2),rec(1,2)],'r-');
+    plot([rec(end,1),rec(1,1)],[rec(end,2),rec(1,2)],'k-');
 end
 end
 

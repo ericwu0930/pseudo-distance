@@ -1,5 +1,5 @@
 % rrt for Zhu Problem
-% clear all;
+clear all;
 %% Zhu's problem environment
 global obstacles;
 global a0;
@@ -8,7 +8,7 @@ global l;
 global Q;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
-rec1p = [rec1;rec1(1,:)];
+rec1p = [rec1;rec1(1,:)]; 
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 10.5;10 10.5;10 18;9 18];
 rec2p = [rec2;rec2(1,:)];
@@ -123,13 +123,13 @@ isCols = 0;
 for i = 1:r-1
     [~,~,on] = size(obstacles);
     for j = 1:on
-        isCols = GJK(x(i:i+1,:),obstacles(:,:,j));
+        isCols = gjk2d(x(i:i+1,:),obstacles(:,:,j));
         if isCols == 1
             return;
         end
     end
     for j = i+2:r-1
-        isCols = GJK(x(i:i+1,:),x(j:j+1,:));
+        isCols = gjk2d(x(i:i+1,:),x(j:j+1,:));
         if isCols == 1
             return;
         end
@@ -162,7 +162,7 @@ x = fk(point);
 dd = 0;
 for i = 1:size(x,1)-1
     for j = 1:size(obstacles,3)
-        [xstar,fval,qe]=QDistanceNew(x(i:i+1,:),obstacles(:,:,j),Q);
+        [xstar,fval,qe]=qDistance2d(x(i:i+1,:),obstacles(:,:,j),Q);
         if fval<=0
             dd = dd + gradN(x(i:i+1,:),obstacles(:,:,j),Q,xstar,point,i,qe);
         end
