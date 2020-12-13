@@ -16,10 +16,12 @@ rec3 = [6 11;7 11;7 12;6 12];
 rec3p = [rec3;rec3(1,:)];
 rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
 rec4p = [rec4;rec4(1,:)];
+rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
 obstacles(:,:,4) = rec4;
+obstacles(:,:,5) = rec5;
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
@@ -46,33 +48,35 @@ while failedAttempts<=maxFailedAttempts
     else
         sample = goal;
     end
-    [A, I] = min(dist(RRTree(:,1:dc),sample),[],1);
-    closestNode = RRTree(I(1),1:dc);
-    dir = (sample - closestNode )/norm(sample - closestNode);
-    newPoint = closestNode + stepsize * dir;
-    if ~checkPath(closestNode(1:dc), newPoint)
+    [A, I] = min(distanceCost(RRTree(:,1:dc),sample),[],1);
+    closestPoint = RRTree(I(1),1:dc);
+    dir = (sample - closestPoint )/norm(sample - closestPoint);
+    newPoint = closestPoint + stepsize * dir;
+    [feasible,colPoint,cstep] = checkPath(newPoint,closestPoint);
+    if feasible == 0
         failedAttempts=failedAttempts+1;
         % todo fix here
         continue;
     end
     
-    if dist(newPoint,goal)<disTh
+    if distanceCost(newPoint,goal)<disTh
         pathFound = true;
         break;
     end
     
-    minCost = A+RRTree(I,dc+1);
+    minCost = distanceCost(newPoint,closestPoint)+RRTree(I,dc+1);
     minParentIdx = I;
     
-    distCols = dist(RRTree(:,1:dc),newPoint);
+    distCols = distanceCost(RRTree(:,1:dc),newPoint);
     nearIdx = find(distCols<=radius);
     sizeNear = size(nearIdx,1);
     if sizeNear > 1
         for i =1:sizeNear-1
             nowNode = RRTree(nearIdx(i),:);
             nowPoint = RRTree(nearIdx(i),1:dc);
-            if checkPath(newPoint,nowPoint)
-                costNear = nowNode(dc+1)+dist(nowPoint,newPoint);
+            [feasible,colPoint,cstep] = checkPath(newPoint,nowPoint);
+            if feasible == 1
+                costNear = nowNode(dc+1)+distanceCost(nowPoint,newPoint);
                 if costNear < minCost
                     minCost = costNear;
                     minParentIdx = nearIdx(i);
@@ -89,11 +93,14 @@ while failedAttempts<=maxFailedAttempts
         for i =1:sizeNear
             reducedNode = RRTree(reducedIdx(i),:);
             reducedPoint = reducedNode(1:dc);
-            nearCost = reducedNode(dc+1);
-            newLine = dist(reducedPoint,newPoint);
-            if nearCost > minCost + newLine && checkPath(reducedPoint,newPoint)
-                RRTree(reducedIdx(i),dc+2) = newNodeIdx;
-                RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+            [feasible,colPoint,cstep]=checkPath(newPoint,reducedPoint);
+            if feasible == 1
+                nearCost = reducedNode(dc+1);
+                newLine = distanceCost(reducedPoint,newPoint);
+                if nearCost > minCost + newLine
+                    RRTree(reducedIdx(i),dc+2) = newNodeIdx;
+                    RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+                end
             end
         end
     end
@@ -117,13 +124,19 @@ if ~pathFound
     error('no path found. maximum attempts reached');
 end
 
-function feasible = checkPath(p1,p2)
+function [feasible,colPoint,step] = checkPath(node,parent)
+global dc;
+step = 0;
+p1 = parent(1:dc);
+p2 = node(1:dc);
+colPoint = []; 
 feasible = 1;
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))
-    isCols = det(p1+i*dir);
-    if isCols == 1
-        feasible = 0;
+    feasible = ~det(p1+i*dir);
+    if feasible == 0
+        colPoint = p1+i*dir;
+        step = i;
         return
     end
 end
@@ -137,13 +150,13 @@ isCols = 0;
 for i = 1:r-1
     [~,~,on] = size(obstacles);
     for j = 1:on
-        isCols = GJK(x(i:i+1,:),obstacles(:,:,j));
+        isCols = gjk2d(x(i:i+1,:),obstacles(:,:,j));
         if isCols == 1
             return;
         end
     end
     for j = i+2:r-1
-        isCols = GJK(x(i:i+1,:),x(j:j+1,:));
+        isCols = gjk2d(x(i:i+1,:),x(j:j+1,:));
         if isCols == 1
             return;
         end
@@ -168,6 +181,6 @@ for i = 2:dc+1
 end
 end
 
-function h = dist(a,b)
+function h = distanceCost(a,b)
 h = sum((a-b).^2,2).^(1/2);
 end

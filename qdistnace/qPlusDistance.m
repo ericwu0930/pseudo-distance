@@ -2,21 +2,22 @@
 clear;
 clc;
 figure(2);
-% G = [-2,1;
-%     -3,-1;
-%     -1,-1];
-G = [7.0000    7.5000;
-    8.0912    9.1761]
-% H = [3,5;
-%     5,4;
-%     4,2];
+G = [-2,1;
+    -3,-1;
+    -1,-1];
+G = G+[4,0];
+% G = [7.0000    7.5000;
+%     8.0912    9.1761]
+H = [3,5;
+    5,4;
+    4,2];
 % H = [3,5;
 %     5,4;];
-H = [6    11;
-     7    11;
-     7    12;
-     6    12]
-patch(G(:,1),G(:,2),'y')
+% H = [6    11;
+%      7    11;
+%      7    12;
+%      6    12]
+patch(G(:,1),G(:,2),'r')
 meanG = mean(G);
 text(meanG(1),meanG(2),'G');
 hold on 
@@ -29,7 +30,7 @@ Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
 meanQ = mean(Q);
-patch(Q(:,1),Q(:,2),'r');
+% patch(Q(:,1),Q(:,2),'r');
 text(meanQ(1),meanQ(2),'Q');
 [rg,cg]=size(G);
 [rh,ch]=size(H);
@@ -63,7 +64,7 @@ for i = 1:3
 plot([newQ(i,1),newQ(i+1,1)],[newQ(i,2),newQ(i+1,2)],'r-');
 end
 meanQ = mean(newQ);
-text(meanQ(1),meanQ(2),'newQ');
+% text(meanQ(1),meanQ(2),'newQ');
 
 
 function p=createSimplyPoly(p)
