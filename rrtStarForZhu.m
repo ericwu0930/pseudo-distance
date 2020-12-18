@@ -1,21 +1,18 @@
 % rrt* for Zhu Problem
-clear all;
+function [time,length]=rrtStarForZhu()
 %% Zhu's problem environment
+display = false;
 global obstacles;
 global a0;
 global dc;
 global l;
-
+global Q;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
-rec1p = [rec1;rec1(1,:)];
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 10.5;10 10.5;10 18;9 18];
-rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
-rec3p = [rec3;rec3(1,:)];
 rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
-rec4p = [rec4;rec4(1,:)];
 rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
@@ -32,8 +29,7 @@ source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 10000;
-display = true;
+maxFailedAttempts = 100000;
 radius = 0.4;
 dc = size(source,2);
 
@@ -43,7 +39,7 @@ failedAttempts = 0;
 counter = 0;
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
-    if rand < 0.3
+    if rand <= 1
         sample = rand(1,dc).* [pi*2 pi*2 pi*2];
     else
         sample = goal;
@@ -115,13 +111,20 @@ while prev>0
     prev = RRTree(prev,dc+2);
 end
 
-pathLength=RRTree(end,dc+1);
-figure;
-plotLink(a0,l,path,obstacles);
-fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength); 
+length=RRTree(end,dc+1);
+
+if display == true
+    figure;
+    plotLink(a0,l,path,obstacles);
+end
+time = toc;
+fprintf('processing time=%d \nPath Length=%d \n\n',time,length);
 
 if ~pathFound
+    time = inf;
+    length = nan;
     error('no path found. maximum attempts reached');
+end
 end
 
 function [feasible,colPoint,step] = checkPath(node,parent)
@@ -129,7 +132,7 @@ global dc;
 step = 0;
 p1 = parent(1:dc);
 p2 = node(1:dc);
-colPoint = []; 
+colPoint = [];
 feasible = 1;
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))

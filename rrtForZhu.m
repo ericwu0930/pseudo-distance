@@ -1,20 +1,18 @@
 % rrt for Zhu Problem
-% clear all;
+function [time,length]=rrtForZhu()
 %% Zhu's problem environment
+display = false;
 global obstacles;
 global a0;
 global dc;
 global l;
+global Q;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
-rec1p = [rec1;rec1(1,:)];
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 10.5;10 10.5;10 18;9 18];
-rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
-rec3p = [rec3;rec3(1,:)];
 rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
-rec4p = [rec4;rec4(1,:)];
 rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
@@ -40,8 +38,8 @@ failedAttempts = 0;
 counter = 0;
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
-    if rand < 0.3
-        sample = rand(1,dc).* [pi*2 pi*2 pi*2]; 
+    if rand <=1
+        sample = rand(1,dc).* [pi*2 pi*2 pi*2];
     else
         sample = goal;
     end
@@ -60,7 +58,7 @@ while failedAttempts<=maxFailedAttempts
     end
     
     RRTree = [RRTree;newPoint I];
-    failedAttempts=0; 
+    failedAttempts=0;
 end
 
 path = [goal];
@@ -69,19 +67,26 @@ while prev>0
     path = [RRTree(prev,1:dc);path];
     prev = RRTree(prev,dc+1);
 end
-    
-pathLength=0;
+
+length=0;
 for i =1:length(path)-1
-    pathLength = pathLength+distanceCost(path(i,1:dc),path(i+1,1:dc));
+    length = length + distanceCost(path(i,1:dc),path(i+1,1:dc));
 end
 
-figure;
-plotLink(a0,l,path,obstacles);
-fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
+if display == true
+    figure;
+    plotLink(a0,l,path,obstacles);
+end
+
+time = toc;
+fprintf('processing time=%d \nPath Length=%d \n\n',time,length);
 
 
 if ~pathFound
-    error('no path found. maximum attempts reached'); 
+    time = inf;
+    length = NaN;
+    error('no path found. maximum attempts reached');
+end
 end
 
 function feasible = checkPath(node,parent)
@@ -107,13 +112,13 @@ isCols = 0;
 for i = 1:r-1
     [~,~,on] = size(obstacles);
     for j = 1:on
-        isCols = GJK(x(i:i+1,:),obstacles(:,:,j));
+        isCols = gjk2d(x(i:i+1,:),obstacles(:,:,j));
         if isCols == 1
             return;
         end
     end
     for j = i+2:r-1
-        isCols = GJK(x(i:i+1,:),x(j:j+1,:));
+        isCols = gjk2d(x(i:i+1,:),x(j:j+1,:));
         if isCols == 1
             return;
         end

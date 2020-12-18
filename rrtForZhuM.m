@@ -1,6 +1,7 @@
 % rrt for Zhu Problem
-clear all;
+function [time,length]=rrtForZhuM()
 %% Zhu's problem environment
+display = false;
 global obstacles;
 global a0;
 global dc;
@@ -8,14 +9,10 @@ global l;
 global Q;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
-rec1p = [rec1;rec1(1,:)]; 
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 10.5;10 10.5;10 18;9 18];
-rec2p = [rec2;rec2(1,:)];
 rec3 = [6 11;7 11;7 12;6 12];
-rec3p = [rec3;rec3(1,:)];
 rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
-rec4p = [rec4;rec4(1,:)];
 rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
@@ -43,7 +40,7 @@ pathFound = false;
 toGoal = false;
 while failedAttempts<=maxFailedAttempts
     if rand < 0.3
-        sample = rand(1,dc).* [pi*2 pi*2 pi*2]; 
+        sample = rand(1,dc).* [pi*2 pi*2 pi*2];
         toGoal = false;
     else
         sample = goal;
@@ -56,25 +53,31 @@ while failedAttempts<=maxFailedAttempts
     [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
     if feasible == 0
         if toGoal == true
-           newPoint = getNewPoint(colPoint,cstep*3/4);
-           if det(newPoint) == 1
-               failedAttempts=failedAttempts+1;
-           else
-               RRTree = [RRTree;newPoint I];
-           end
+            adjustAttempts = 1;
+            while adjustAttempts < 10
+                newPoint = getNewPoint(colPoint,cstep);
+                if ~det(newPoint)
+                    break;
+                end
+                adjustAttempts =  adjustAttempts+1;
+            end
+            if adjustAttempts >= 10
+                failedAttempts=failedAttempts+1;
+                continue;
+            end
         else
             failedAttempts=failedAttempts+1;
+            continue;
         end
-    else
-        RRTree = [RRTree;newPoint I];
     end
+    RRTree = [RRTree;newPoint I];
     
     if distanceCost(newPoint,goal)<disTh
         pathFound = true;
         break;
     end
     
-    failedAttempts=0; 
+    failedAttempts=0;
 end
 
 path = [goal];
@@ -83,29 +86,35 @@ while prev>0
     path = [RRTree(prev,1:dc);path];
     prev = RRTree(prev,dc+1);
 end
-    
+
 pathLength=0;
 for i =1:length(path)-1
-    pathLength = pathLength+distanceCost(path(i,1:dc),path(i+1,1:dc));
+    pathLength = length+distanceCost(path(i,1:dc),path(i+1,1:dc));
 end
 
-figure;
-plotLink(a0,l,path,obstacles);
-fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
+if display == true
+    figure;
+    plotLink(a0,l,path,obstacles);
+end
+
+time = toc;
+fprintf('processing time=%d \nPath Length=%d \n\n', time,length);
 
 
 if ~pathFound
-    error('no path found. maximum attempts reached'); 
+    time = inf;
+    length = nan;
+    error('no path found. maximum attempts reached');
 end
 
-toc
+end
 
 function [feasible,colPoint,step] = checkPath(node,parent)
 global dc;
 step = 0;
 p1 = parent(1:dc);
 p2 = node(1:dc);
-colPoint = []; 
+colPoint = [];
 feasible = 1;
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))
