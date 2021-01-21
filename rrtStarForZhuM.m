@@ -1,13 +1,12 @@
 % rrt* for Zhu Problem
-function [time,length]=rrtStarForZhuM()
+function [time,pathLength]=rrtStarForZhuM()
 %% Zhu's problem environment
 global obstacles;
 global a0;
 global dc;
 global l;
 global Q;
-time = inf;
-length = NaN;
+display=false;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 % rec2 = [9 12;10 12;10 20;9 20];
@@ -30,14 +29,13 @@ source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 10000;
+maxFailedAttempts = 2500;
 radius = 0.4;
 dc = size(source,2);
 
 tic
 RRTree = [source 0 -1];
 failedAttempts = 0;
-counter = 0;
 pathFound = false;
 toGoal = false;
 while failedAttempts<=maxFailedAttempts
@@ -56,14 +54,15 @@ while failedAttempts<=maxFailedAttempts
     if feasible == 0
         if toGoal == true
             adjustAttempts = 1;
-            while adjustAttempts < 10
+            while adjustAttempts < 4
                 newPoint = getNewPoint(colPoint,cstep);
-                if ~det(newPoint)
+                [feasible,colPoint,cstep] = checkPath(newPoint,closestPoint);
+                if feasible == 1
                     break;
                 end
                 adjustAttempts =  adjustAttempts+1;
             end
-            if adjustAttempts >= 10
+            if adjustAttempts >= 4
                 failedAttempts=failedAttempts+1;
                 continue;
             end
@@ -107,11 +106,14 @@ while failedAttempts<=maxFailedAttempts
         for i =1:sizeNear
             reducedNode = RRTree(reducedIdx(i),:);
             reducedPoint = reducedNode(1:dc);
-            nearCost = reducedNode(dc+1);
-            newLine = distanceCost(reducedPoint,newPoint);
-            if nearCost > minCost + newLine && checkPath(reducedPoint,newPoint)
-                RRTree(reducedIdx(i),dc+2) = newNodeIdx;
-                RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+            [feasible,colPoint,cstep]=checkPath(newPoint,reducedPoint);
+            if feasible == 1
+                nearCost = reducedNode(dc+1);
+                newLine = distanceCost(reducedPoint,newPoint);
+                if nearCost > minCost + newLine
+                    RRTree(reducedIdx(i),dc+2) = newNodeIdx;
+                    RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+                end
             end
         end
     end
@@ -125,15 +127,17 @@ while prev>0
     prev = RRTree(prev,dc+2);
 end
 
-length=RRTree(end,dc+1);
-figure;
-plotLink(a0,l,path,obstacles);
+pathLength=RRTree(end,dc+1);
+if display == true
+    figure;
+    plotLink(a0,l,path,obstacles);
+end
 time = toc;
-fprintf('processing time=%d \nPath Length=%d \n\n', toc,length); 
+fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
 
 if ~pathFound
     time = inf;
-    length=NaN;
+    pathLength=NaN;
     error('no path found. maximum attempts reached');
 end
 end
@@ -143,7 +147,7 @@ global dc;
 step = 0;
 p1 = parent(1:dc);
 p2 = node(1:dc);
-colPoint = []; 
+colPoint = [];
 feasible = 1;
 if norm(node-parent)<1e-3
     return;

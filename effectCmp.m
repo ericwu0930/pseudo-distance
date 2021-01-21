@@ -1,12 +1,30 @@
 % 效果对比
-pathLen1 = 0;
+close all;
+clear all;
+%% RRT
+rrt = zeros(2,20);
 for i = 1:20
-    rrtForZhu;
-    pathLen1 = pathLen1 + pathLength;
+    [time,pathLength]=rrtForZhu();
+    rrt(:,i)=[time;pathLength];
 end
 
-pathLen2 = 0;
+%% QD-RRT
+qdrrt = zeros(2,20);
 for i = 1:20
-    rrtForZhuM;
-    pathLen2 = pathLen2 + pathLength;
+    [time,pathLength]=rrtForZhuM();
+    qdrrt(:,i)=[time;pathLength];
+end
+
+%% RRT*
+rrt_ = zeros(2,20);
+for i = 1:20
+    [time,pathLength]=rrtStarForZhu();
+    rrt_(:,i)=[time;pathLength];
+end
+
+%% QD-RRT*
+qdrrt_ = zeros(2,20);
+for i = 1:20
+    [time,pathLength]=rrtStarForZhuM();
+    qdrrt_(:,i)=[time;pathLength];
 end

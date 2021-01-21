@@ -1,37 +1,34 @@
-% rrt for Zhu Problem
-function [time,pathLength,path]=rrtForZhuM()
-%% Zhu's problem environment
+%% QD-RRT for hyper-redundant robot
+function [time,pathLength,path] = rrtmForHyperRedundant()
 display = false;
+path = [];
 global obstacles;
 global a0;
 global dc;
 global l;
 global Q;
-% rec1 = [9 0;10 0;10 6;9 6];
-rec1 = [9 0;10 0;10 8.5;9 8.5];
-% rec2 = [9 12;10 12;10 20;9 20];
-rec2 = [9 10.5;10 10.5;10 18;9 18];
-rec3 = [6 11;7 11;7 12;6 12];
-rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
-rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
+%% obstacles
+rec1 = [11,-5;15,-5;15,-15;11,-15]/10;
+rec2 = [35 -32;85,-32;85 -60;35 -60]/10;
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
-obstacles(:,:,3) = rec3;
-obstacles(:,:,4) = rec4;
-obstacles(:,:,5) = rec5;
+%% link
+a0=[9,-28]/10;
+l=8/10;
+source = [-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi];
+goal = [pi/4,pi/3,pi/2,pi/2,pi*3/4,0];
+dc = size(source,2);
+%% Q
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
-%% initial and end position of manipulator
-a0 = [7 7.5];
-l = 2;
-source = [45 0 -60]*pi/180;
-goal = [200 130 110]*pi/180;
+
+%% QD-RRT parameters
 stepsize = 0.2;
 disTh = 0.2;
 maxFailedAttempts = 2500;
-dc = size(source,2);
 
+%% start process
 tic
 RRTree = [source -1];
 failedAttempts = 0;
@@ -39,8 +36,8 @@ counter = 0;
 pathFound = false;
 toGoal = false;
 while failedAttempts<=maxFailedAttempts
-    if rand < 0.3
-        sample = rand(1,dc).* [pi*2 pi*2 pi*2];
+    if rand < 0.5
+        sample = rand(1,dc).* ones(1,dc)*pi*2;
         toGoal = false;
     else
         sample = goal;
@@ -56,13 +53,12 @@ while failedAttempts<=maxFailedAttempts
             adjustAttempts = 1;
             while adjustAttempts < 4
                 newPoint = getNewPoint(colPoint,cstep);
-                [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
-                if feasible == 1
+                if ~det(newPoint)
                     break;
                 end
                 adjustAttempts =  adjustAttempts+1;
             end
-            if adjustAttempts >= 10
+            if adjustAttempts >= 4
                 failedAttempts=failedAttempts+1;
                 continue;
             end
@@ -105,11 +101,11 @@ fprintf('processing time=%d \nPath Length=%d \n\n', time,pathLength);
 if ~pathFound
     time = inf;
     pathLength = nan;
-    error('no path found. maximum attempts reached');
+    fprintf('no path found. maximum attempts reached');
+end
 end
 
-end
-
+%% auxiliary function
 function [feasible,colPoint,step] = checkPath(node,parent)
 global dc;
 step = 0;
@@ -117,9 +113,6 @@ p1 = parent(1:dc);
 p2 = node(1:dc);
 colPoint = [];
 feasible = 1;
-if norm(node-parent)<1e-3
-    return;
-end
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))
     feasible = ~det(p1+i*dir);
@@ -190,6 +183,8 @@ end
 
 function dd = gradN(VA,VB,VQ,xstar,theta,j,qe)
 global l;
+global dc;
+dd = zeros(dc,1);
 [~,cq]=size(VQ);
 [ra,~]=size(VA);
 [rb,~]=size(VB);
@@ -197,15 +192,29 @@ if sum(xstar~=0) ~= cq+2
     dd = 0;
     return;
 end
-dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
-    0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
-dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
-    0,0,l*cos(theta(2)),l*cos(theta(2))];
-dPA3 = [0,0,0,-l*sin(theta(3));
-    0,0,0,l*cos(theta(3))];
-dPA1=dPA1(:,j:j+1);
-dPA2=dPA2(:,j:j+1);
-dPA3=dPA3(:,j:j+1);
+% origin
+% dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
+%     0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
+% dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
+%     0,0,l*cos(theta(2)),l*cos(theta(2))];
+% dPA3 = [0,0,0,-l*sin(theta(3));
+%     0,0,0,l*cos(theta(3))];
+% dPA1=dPA1(:,j:j+1);
+% dPA2=dPA2(:,j:j+1);
+% dPA3=dPA3(:,j:j+1);
+
+dPA = zeros(2,dc*2);
+i = 1;
+while i <= dc*2
+    ti = floor(i/2)+1;
+    if j>=ti+1
+        dPA(:,i) = [-l*sin(theta(ti));l*cos(theta(ti))];
+    end
+    if j+1>=ti+1
+        dPA(:,i+1) = [-l*sin(theta(ti));l*cos(theta(ti))];
+    end
+    i = i+2;
+end
 
 anz=xstar(1:ra,:)~=0;
 bnz=xstar(ra+1:ra+rb,:)~=0;
@@ -217,50 +226,13 @@ tmp = VB(bnz,:);
 PB=tmp(2:end,:)-tmp(1,:);
 PB=PB';
 astar = xstar(anz);
-dd(1,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
-dd(2,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
-dd(3,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
+% dd(1,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
+% dd(2,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
+% dd(3,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
+for i = 1:dc
+    tmp =  dPA(:,2*i-1:2*i);
+    dd(i,:) = [1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-tmp(:,anz)*astar);
 end
-
-function dd = gradP(VA,VB,VQ,xstar,theta,j)
-% VA vertices of A
-% VB vertices of B
-% VQ vertices of Q
-% xstar best solution
-% theta joint configuration of link
-% j jth link
-global l;
-[~,cq]=size(VQ);
-[ra,~]=size(VA);
-[rb,~]=size(VB);
-if sum(xstar~=0) ~= cq+2
-    dd = 0;
-    return;
-end
-dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
-    0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
-dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
-    0,0,l*cos(theta(2)),l*cos(theta(2))];
-dPA3 = [0,0,0,-l*sin(theta(3));
-    0,0,0,l*cos(theta(3))];
-dPA1=dPA1(:,j:j+1);
-dPA2=dPA2(:,j:j+1);
-dPA3=dPA3(:,j:j+1);
-
-anz=xstar(1:ra,:)~=0;
-bnz=xstar(ra+1:ra+rb,:)~=0;
-qnz=xstar(rb+ra+1:end,:)~=0;
-PQ = VQ(qnz,:)';
-tmp = VA(anz,:);
-PA=tmp(2:end,:)-tmp(1,:);
-PA=PA';
-tmp = VB(bnz,:);
-PB=tmp(2:end,:)-tmp(1,:);
-PB=PB';
-astar = xstar(anz);
-dd(1,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
-dd(2,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
-dd(3,:)=[ones(1,size(PQ,2)),zeros(1,cq-size(PQ,2))]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
 end
 
 function h = distanceCost(a,b)

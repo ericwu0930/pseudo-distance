@@ -1,64 +1,64 @@
-% rrt for Zhu Problem
-function [time,pathLength]=rrtForZhu()
-%% Zhu's problem environment
-display = false;
+%% QD-RRT for hyper-redundant robot
+function [time,pathLength] = rrtForHyperRedundant()
+display = true;
 global obstacles;
 global a0;
 global dc;
 global l;
 global Q;
-% rec1 = [9 0;10 0;10 6;9 6];
-rec1 = [9 0;10 0;10 8.5;9 8.5];
-% rec2 = [9 12;10 12;10 20;9 20];
-rec2 = [9 10.5;10 10.5;10 18;9 18];
-rec3 = [6 11;7 11;7 12;6 12];
-rec4 = [12 7.5;13.8 7.5;13.8 9.3;12 9.3];
-rec5 = [10 9.5;10 10.5;11 10.5;11 9.5];
+%% obstacles
+rec1 = [11,-5;15,-5;15,-15;11,-15]/10;
+rec2 = [35 -32;85,-32;85 -60;35 -60]/10;
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
-obstacles(:,:,3) = rec3;
-obstacles(:,:,4) = rec4;
-% obstacles(:,:,5) = rec5;
+%% link
+a0=[9,-28]/10;
+l=8/10;
+source = [-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi/2,-pi];
+goal = [pi/2,pi/2,pi/2,pi/2,pi/2,pi/2,pi/2,pi/2,pi/2,pi];
+dc = size(source,2);
+%% Q
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
-%% initial and end position of manipulator
-a0 = [7 7.5];
-l = 2;
-source = [45 0 -60]*pi/180;
-goal = [200 130 110]*pi/180;
+
+%% QD-RRT parameters
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 10000;
-dc = size(source,2);
+maxFailedAttempts = 500000;
 
+%% start process
 tic
 RRTree = [source -1];
 failedAttempts = 0;
 counter = 0;
 pathFound = false;
+toGoal = false;
 while failedAttempts<=maxFailedAttempts
-    if rand <=1
-        sample = rand(1,dc).* [pi*2 pi*2 pi*2];
+    if rand < 0.9
+        sample = rand(1,dc).* ones(1,dc)*pi*2;
+        toGoal = false;
     else
         sample = goal;
+        toGoal = true;
     end
     [A, I] = min(distanceCost(RRTree(:,1:dc),sample),[],1);
     closestNode = RRTree(I(1),1:dc);
     dir = (sample - closestNode )/norm(sample - closestNode);
     newPoint = closestNode + stepsize * dir;
-    [feasible,~,~]=checkPath(newPoint,closestNode);
+    [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
     if feasible == 0
         failedAttempts=failedAttempts+1;
-        % todo fix here
         continue;
     end
+    
+    RRTree = [RRTree;newPoint I];
+    
     if distanceCost(newPoint,goal)<disTh
         pathFound = true;
         break;
     end
     
-    RRTree = [RRTree;newPoint I];
     failedAttempts=0;
 end
 
@@ -71,7 +71,7 @@ end
 
 pathLength=0;
 for i =1:length(path)-1
-    pathLength = pathLength + distanceCost(path(i,1:dc),path(i+1,1:dc));
+    pathLength = pathLength+distanceCost(path(i,1:dc),path(i+1,1:dc));
 end
 
 if display == true
@@ -80,16 +80,17 @@ if display == true
 end
 
 time = toc;
-fprintf('processing time=%d \nPath Length=%d \n\n',time,pathLength);
+fprintf('processing time=%d \nPath Length=%d \n\n', time,pathLength);
 
 
 if ~pathFound
     time = inf;
-    pathLength = NaN;
+    pathLength = nan;
     error('no path found. maximum attempts reached');
 end
 end
 
+%% auxiliary function
 function [feasible,colPoint,step] = checkPath(node,parent)
 global dc;
 step = 0;
@@ -97,9 +98,6 @@ p1 = parent(1:dc);
 p2 = node(1:dc);
 colPoint = [];
 feasible = 1;
-if norm(node-parent)<1e-3
-    return;
-end
 dir = (p2-p1)/norm(p2-p1);
 for i=0:0.05:sqrt(sum((p2-p1).^2))
     feasible = ~det(p1+i*dir);
@@ -149,7 +147,6 @@ for i = 2:dc+1
     x(i,:) = x(i-1,:)+[l*cos(theta(i-1)) l*sin(theta(i-1))];
 end
 end
-
 
 function h = distanceCost(a,b)
 h = sum((a-b).^2,2).^(1/2);

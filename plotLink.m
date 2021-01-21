@@ -7,7 +7,9 @@ for i = 1:r
     for j = 1:size(x,1)-1
         handle(i)=plot(x(j:j+1,1),x(j:j+1,2),'r-');
     end
-    plot(x(2:3,1),x(2:3,2),'ro')
+    for j = 2:size(x,1)-1
+        plot(x(j,1),x(j,2),'ro')
+    end
 end
 end
 

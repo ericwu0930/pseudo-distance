@@ -1,5 +1,5 @@
 % rrt* for Zhu Problem
-function [time,length]=rrtStarForZhu()
+function [time,pathLength]=rrtStarForZhu()
 %% Zhu's problem environment
 display = false;
 global obstacles;
@@ -18,7 +18,7 @@ obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
 obstacles(:,:,4) = rec4;
-obstacles(:,:,5) = rec5;
+% obstacles(:,:,5) = rec5;
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
@@ -29,14 +29,13 @@ source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 100000;
+maxFailedAttempts = 10000;
 radius = 0.4;
 dc = size(source,2);
 
 tic
 RRTree = [source 0 -1];
 failedAttempts = 0;
-counter = 0;
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
     if rand <= 1
@@ -111,18 +110,18 @@ while prev>0
     prev = RRTree(prev,dc+2);
 end
 
-length=RRTree(end,dc+1);
+pathLength=RRTree(end,dc+1);
 
 if display == true
     figure;
     plotLink(a0,l,path,obstacles);
 end
 time = toc;
-fprintf('processing time=%d \nPath Length=%d \n\n',time,length);
+fprintf('processing time=%d \nPath Length=%d \n\n',time,pathLength);
 
 if ~pathFound
     time = inf;
-    length = nan;
+    pathLength = nan;
     error('no path found. maximum attempts reached');
 end
 end
