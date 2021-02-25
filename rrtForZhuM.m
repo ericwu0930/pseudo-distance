@@ -29,7 +29,7 @@ source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 2500;
+maxFailedAttempts = 10000;
 dc = size(source,2);
 
 tic
@@ -39,7 +39,7 @@ counter = 0;
 pathFound = false;
 toGoal = false;
 while failedAttempts<=maxFailedAttempts
-    if rand < 0.3
+    if rand <= 0.7
         sample = rand(1,dc).* [pi*2 pi*2 pi*2];
         toGoal = false;
     else
@@ -62,7 +62,7 @@ while failedAttempts<=maxFailedAttempts
                 end
                 adjustAttempts =  adjustAttempts+1;
             end
-            if adjustAttempts >= 10
+            if adjustAttempts >= 4
                 failedAttempts=failedAttempts+1;
                 continue;
             end
@@ -105,7 +105,6 @@ fprintf('processing time=%d \nPath Length=%d \n\n', time,pathLength);
 if ~pathFound
     time = inf;
     pathLength = nan;
-    error('no path found. maximum attempts reached');
 end
 
 end

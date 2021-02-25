@@ -8,6 +8,13 @@ for i = 1:20
     rrt(:,i)=[time;pathLength];
 end
 
+%% RRT P
+rrtp = zeros(2,20); 
+for i = 1:20
+    [time,pathLength]=rrtForZhuP();
+    rrtp(:,i)=[time;pathLength];
+end
+
 %% QD-RRT
 qdrrt = zeros(2,20);
 for i = 1:20
