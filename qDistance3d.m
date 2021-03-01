@@ -1,6 +1,12 @@
 function [rho,fval,qe] = qDistance3d(A,B,Q)
 qe = [];
-isCol = gjk3d(A,B);
+obj1.XData = A(:,1);
+obj1.YData = A(:,2);
+obj1.ZData = A(:,3);
+obj2.XData = B(:,1);
+obj2.YData = B(:,2);
+obj2.ZData = B(:,3);
+isCol = GJK(obj1,obj2,6);
 [ra,ca]=size(A);
 [rb,~]=size(B);
 [rq,~]=size(Q);
