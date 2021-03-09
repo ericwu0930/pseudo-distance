@@ -86,8 +86,8 @@ hold on
 axis equal
 grid on
 for i = 1:6
-    h = patch(rec1(of(i,:,1),1),rec1(of(i,:,1),2),rec1(of(i,:,1),3),'g')
-    set(h,'facealpha',0.2);
+    h = patch(rec1(of(i,:,1),1),rec1(of(i,:,1),2),rec1(of(i,:,1),3),'y')
+%     set(h,'facealpha',0.2);
 end
 rec2 = [0.8250,0.2000,0.7500;
     0.8250,0.2000,0;
@@ -99,8 +99,8 @@ rec2 = [0.8250,0.2000,0.7500;
     0.8250,-0.5000,0];
 of(:,:,2) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
 for i = 1:6
-    h = patch(rec2(of(i,:,2),1),rec2(of(i,:,2),2),rec2(of(i,:,2),3),'g');
-    set(h,'facealpha',0.2);
+    h = patch(rec2(of(i,:,2),1),rec2(of(i,:,2),2),rec2(of(i,:,2),3),'y');
+%     set(h,'facealpha',0.2);
 end
 rec3 = [0.4356,0.0499,1.6592;
     0.4356,0.0499,1.1592;
@@ -112,28 +112,23 @@ rec3 = [0.4356,0.0499,1.6592;
     0.4356,-0.9501,1.1592];
 of(:,:,3) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
 for i = 1:6
-    h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'g')
-    set(h,'facealpha',0.2);
+    h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'y')
+%     set(h,'facealpha',0.2);
 end
 obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
-%% define Q
-Q1 = [sqrt(6)/3 -sqrt(2)/3 -1/3];
-Q2 = [-sqrt(6)/3 -sqrt(2)/3 -1/3];
-Q3 = [0 2*sqrt(2)/3 -1/3];
-Q4 = [0 0 1];
-Q = [Q1;Q2;Q3;Q4];
 %% initial and end position of manipulator
-% source = [20,-45,60,-50,0,0]*pi/180;
-source = [40,-70+360,60,-50+360,0,0]*pi/180;
-midpoint = [106,-45+360,60,-50+360,0,0]*pi/180;
-endpoint = [160,-68,30,-30,0,0]*pi/180;
+point0 = [20,-45,60,-50,0,0]*pi/180;
+point1 = [40,-70+360,60,-50+360,0,0]*pi/180;
+point2 = [106,-45+360,60,-50+360,0,0]*pi/180;
+point3 = [160,-68,30,-30,0,0]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
 maxFailedAttempts = 10000;
+source = point0;
 dc = size(source,2);
-goal = midpoint;
+goal = point2;
 %% main proccession
 tic
 RRTree = [source -1];
