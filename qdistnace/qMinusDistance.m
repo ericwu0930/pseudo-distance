@@ -20,7 +20,7 @@ patch(H(:,1),H(:,2),'b')
 meanG = mean(G);
 meanH = mean(H);
 % text(meanG(1),meanG(2),'G');
-text(meanH(1),meanH(2),'H');
+% text(meanH(1),meanH(2),'H');
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
@@ -36,7 +36,7 @@ end
 K = convhull(P(:,1),P(:,2));
 meanP = mean(P);
 patch(P(K,1),P(K,2),'w');
-text(meanP(1),meanP(2),'G-H');
+% text(meanP(1),meanP(2),'G-H');
 maxFval = -inf;
 maxX = [];
 for i = 1:rq

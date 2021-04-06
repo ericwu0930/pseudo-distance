@@ -19,19 +19,19 @@ H = [3,5;
 %      6    12]
 patch(G(:,1),G(:,2),'r')
 meanG = mean(G);
-text(meanG(1),meanG(2),'G');
+% text(meanG(1),meanG(2),'G');
 hold on 
-grid on 
+% grid on 
 axis equal
 patch(H(:,1),H(:,2),'b')
 meanH = mean(H);
-text(meanH(1),meanH(2),'H');
+% text(meanH(1),meanH(2),'H');
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
 meanQ = mean(Q);
 % patch(Q(:,1),Q(:,2),'r');
-text(meanQ(1),meanQ(2),'Q');
+% text(meanQ(1),meanQ(2),'Q');
 [rg,cg]=size(G);
 [rh,ch]=size(H);
 [rq,cq]=size(Q);
@@ -44,7 +44,7 @@ end
 K = convhull(P(:,1),P(:,2));
 meanP = mean(P);
 patch(P(K,1),P(K,2),'w');
-text(meanP(1),meanP(2),'G-H');
+% text(meanP(1),meanP(2),'G-H');
 row1 = [G',-H', -Q'];
 row2 = [ones(1,rg),zeros(1,length(row1)-rg)];
 row3 = [zeros(1,rg),ones(1,rh),zeros(1,length(row1)-rg-rh)];

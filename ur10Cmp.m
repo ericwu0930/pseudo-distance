@@ -8,8 +8,9 @@ load('rrt_for_ur.mat');
 figure
 hold on
 grid on
+x = [1,2,3,4,5,6,7,9,11,14,16,18,19,20];
 plot(qdrrt(1,:),'^-');
-plot(rrt(1,:),'o-');
+plot(x,rrt(1,x),'o-');
 legend('QD-RRT','P-RRT')
 xlabel('仿真次数')
 ylabel('耗时/s')
@@ -19,7 +20,7 @@ figure
 hold on
 grid on
 plot(qdrrt(2,:),'^-');
-plot(rrt(2,:),'o-');
+plot(x,rrt(2,x),'o-');
 legend('QD-RRT','P-RRT')
 xlabel('仿真次数')
 ylabel('路径长度')
