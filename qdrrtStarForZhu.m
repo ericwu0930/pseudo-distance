@@ -1,12 +1,12 @@
-% rrt for Zhu Problem
-function [time,pathLength,path]=rrtForZhuM()
+% rrt* for Zhu Problem
+function [time,pathLength]=qdrrtStarForZhu()
 %% Zhu's problem environment
-display = false;
 global obstacles;
 global a0;
 global dc;
 global l;
 global Q;
+display=false;
 % rec1 = [9 0;10 0;10 6;9 6];
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 % rec2 = [9 12;10 12;10 20;9 20];
@@ -29,17 +29,17 @@ source = [45 0 -60]*pi/180;
 goal = [200 130 110]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
-maxFailedAttempts = 10000;
+maxFailedAttempts = 2500;
+radius = 0.4;
 dc = size(source,2);
 
 tic
-RRTree = [source -1];
+RRTree = [source 0 -1];
 failedAttempts = 0;
-counter = 0;
 pathFound = false;
 toGoal = false;
 while failedAttempts<=maxFailedAttempts
-    if rand <= 0.7
+    if rand < 0.3
         sample = rand(1,dc).* [pi*2 pi*2 pi*2];
         toGoal = false;
     else
@@ -47,16 +47,16 @@ while failedAttempts<=maxFailedAttempts
         toGoal = true;
     end
     [A, I] = min(distanceCost(RRTree(:,1:dc),sample),[],1);
-    closestNode = RRTree(I(1),1:dc);
-    dir = (sample - closestNode )/norm(sample - closestNode);
-    newPoint = closestNode + stepsize * dir;
-    [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
+    closestPoint = RRTree(I(1),1:dc);
+    dir = (sample - closestPoint)/norm(sample - closestPoint);
+    newPoint = closestPoint + stepsize * dir;
+    [feasible,colPoint,cstep] = checkPath(newPoint,closestPoint);
     if feasible == 0
         if toGoal == true
             adjustAttempts = 1;
             while adjustAttempts < 4
                 newPoint = getNewPoint(colPoint,cstep);
-                [feasible,colPoint,cstep] = checkPath(newPoint,closestNode);
+                [feasible,colPoint,cstep] = checkPath(newPoint,closestPoint);
                 if feasible == 1
                     break;
                 end
@@ -71,42 +71,75 @@ while failedAttempts<=maxFailedAttempts
             continue;
         end
     end
-    RRTree = [RRTree;newPoint I];
     
     if distanceCost(newPoint,goal)<disTh
         pathFound = true;
         break;
     end
     
+    minCost = distanceCost(newPoint,closestPoint)+RRTree(I,dc+1);
+    minParentIdx = I;
+    % change parent node
+    distCols = distanceCost(RRTree(:,1:dc),newPoint);
+    nearIdx = find(distCols<=radius);
+    sizeNear = size(nearIdx,1);
+    if sizeNear > 1
+        for i =1:sizeNear-1
+            nowNode = RRTree(nearIdx(i),:);
+            nowPoint = RRTree(nearIdx(i),1:dc);
+            [feasible,colPoint,cstep] = checkPath(newPoint,nowPoint);
+            if feasible == 1
+                costNear = nowNode(dc+1)+distanceCost(nowPoint,newPoint);
+                if costNear < minCost
+                    minCost = costNear;
+                    minParentIdx = nearIdx(i);
+                end
+            end
+        end
+    end
+    newNode = [newPoint,minCost,minParentIdx];
+    RRTree = [RRTree;newNode];
+    newNodeIdx = size(RRTree,1);
+    
+    if sizeNear > 1
+        reducedIdx = nearIdx;
+        for i =1:sizeNear
+            reducedNode = RRTree(reducedIdx(i),:);
+            reducedPoint = reducedNode(1:dc);
+            [feasible,colPoint,cstep]=checkPath(newPoint,reducedPoint);
+            if feasible == 1
+                nearCost = reducedNode(dc+1);
+                newLine = distanceCost(reducedPoint,newPoint);
+                if nearCost > minCost + newLine
+                    RRTree(reducedIdx(i),dc+2) = newNodeIdx;
+                    RRTree(reducedIdx(i),dc+1) = minCost+newLine;
+                end
+            end
+        end
+    end
     failedAttempts=0;
 end
 
-path = [goal];
+path = goal;
 prev = I;
 while prev>0
     path = [RRTree(prev,1:dc);path];
-    prev = RRTree(prev,dc+1);
+    prev = RRTree(prev,dc+2);
 end
 
-pathLength=0;
-for i =1:length(path)-1
-    pathLength = pathLength+distanceCost(path(i,1:dc),path(i+1,1:dc));
-end
-
+pathLength=RRTree(end,dc+1);
 if display == true
     figure;
     plotLink(a0,l,path,obstacles);
 end
-
 time = toc;
-fprintf('processing time=%d \nPath Length=%d \n\n', time,pathLength);
-
+fprintf('processing time=%d \nPath Length=%d \n\n', toc,pathLength);
 
 if ~pathFound
     time = inf;
-    pathLength = nan;
+    pathLength=NaN;
+    error('no path found. maximum attempts reached');
 end
-
 end
 
 function [feasible,colPoint,step] = checkPath(node,parent)
