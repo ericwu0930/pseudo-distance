@@ -1,9 +1,9 @@
 function [time,len,path] = atace_plan(qs,pg)
 %% function definition
-    % state -1 trapped 0 advanced 1 reached
+% state -1 trapped 0 advanced 1 reached
     function [state,Nk]=extend_with_constraint(Nc,pd,greedy)
         pc = Nc(1:3);
-        pPath = [pc];
+        pPath = pc;
         i = 1;
         p = pc;
         state = 0;
@@ -33,6 +33,16 @@ function [time,len,path] = atace_plan(qs,pg)
     end
 
     function [v,w,pd_proj] = compute_valid_velocity(p,pd)
+        % transforms end-effector constraints into end-effector velocity
+        % constraints
+        time_interval = 0.1;
+        [x,y,z] = p(1:3);
+        [xd,yd,zd] = pd(1:3);
+        [a;b;c] = eval(grad)
+        A = [a b c;-b a 0;-c 0 a];
+        b = [[a,b,c]*[x,y,z]';a*yd-b*xd;a*zd-c*xd];
+        pdp = linsolve(A,b);
+        v = (pdp-p(1:3))/(norm(pdp-p(1:3)));
     end
 
     function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
@@ -42,7 +52,7 @@ function [time,len,path] = atace_plan(qs,pg)
     end
 
     function [state,cPath] = track_end_effector_path(q,pPath)
-    % dijkstra refered to lu's paper or 2002 Orthey's paper
+        % dijkstra refered to lu's paper or 2002 Orthey's paper
     end
 
     function x = fkine(q)
@@ -63,7 +73,9 @@ function [time,len,path] = atace_plan(qs,pg)
         state = extend_with_constraint(Nk,pg,true);
     end
 %% parameter definition
-constraint = nan; % constraint function
+syms x y z
+constraint = x+2*y+3*z+4; % constraint function
+grad = gradient(f,[x,y,z]); % symbolic expression of tangent plane of constraint function
 a0 = [7 7.5];
 l = 2;
 dim = size(qs,2);
