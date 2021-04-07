@@ -1,4 +1,4 @@
-function [time,len,path] = atace_plan(qs,pg)
+function [time,len,path] = atace_plan()
 %% function definition
 % state -1 trapped 0 advanced 1 reached
     function [state,Nk]=extend_with_constraint(Nc,pd,greedy)
@@ -35,20 +35,37 @@ function [time,len,path] = atace_plan(qs,pg)
     function [v,w,pd_proj] = compute_valid_velocity(p,pd)
         % transforms end-effector constraints into end-effector velocity
         % constraints
-        time_interval = 0.1;
-        [x,y,z] = p(1:3);
-        [xd,yd,zd] = pd(1:3);
-        [a;b;c] = eval(grad)
-        A = [a b c;-b a 0;-c 0 a];
-        b = [[a,b,c]*[x,y,z]';a*yd-b*xd;a*zd-c*xd];
-        pdp = linsolve(A,b);
-        v = (pdp-p(1:3))/(norm(pdp-p(1:3)));
+        %         [x,y,z] = p(1:3);
+        %         [xd,yd,zd] = pd(1:3);
+        %         n = eval(grad);
+        %         a=n(1);
+        %         b=n(2);
+        %         c=n(3);
+        %         A = [a b c;-b a 0;-c 0 a];
+        %         b = [[a,b,c]*[x,y,z]';a*yd-b*xd;a*zd-c*xd];
+        %         pdp = linsolve(A,b);
+        %         v = (pdp-p(1:3))/(norm(pdp-p(1:3)));
+        x = p(1);
+        y = p(2);
+        xd = pd(1);
+        yd = pd(2);
+        a = [x;-0.0839*2*x];
+        pd_proj = (a*a')*pd/(a'*a);
+        v = (pd_proj - p(1:2))/norm(pd_proj-p(1:2));
+        w = 0;
     end
 
     function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
+        state = 0;
+        time_interval = 0.1;
+        p_next = [p(1:2)+time_interval*v,p(3)];
+        if norm(p(1:2),pd_proj(1:2))<disTh
+            state = 1;
+        end
     end
 
     function isCols = check_path(ps,pe)
+        isCols = false;
     end
 
     function [state,cPath] = track_end_effector_path(q,pPath)
@@ -58,7 +75,7 @@ function [time,len,path] = atace_plan(qs,pg)
     function x = fkine(q)
         x = zeros(dc+1,2);
         x(1,:) = a0(:)';
-        curQ = 0
+        curQ = 0;
         for i = 2:dim+1
             curQ = curQ+q(i-1);
             x(i,:) = x(i-1,:)+[l*cos(curQ) l*sin(curQ)];
@@ -67,18 +84,32 @@ function [time,len,path] = atace_plan(qs,pg)
 
     function Nc = nearest_node(pd)
         % todo: how to measure se3 to se3? reference to Jin?
+        Nc = nan;
+        min_value = inf;
+        cnt = size(Tree);
+        for i=1:cnt
+            curNode = Tree(i);
+            val = sqrt((curNode.p(1)-pd(1))^2+(curNode.p(2)-pd(2))^2+(curNode.p(3)-pd(3))^2);
+            if val<min_value
+                min_value = val;
+                Nc = curNode;
+            end
+        end
     end
 
     function state = connect_to_goal(Nk)
         state = extend_with_constraint(Nk,pg,true);
     end
 %% parameter definition
-syms x y z
-constraint = x+2*y+3*z+4; % constraint function
+syms x y;
+constraint = -0.0839*x^2+5.5-y; % constraint function
 grad = gradient(f,[x,y,z]); % symbolic expression of tangent plane of constraint function
-a0 = [7 7.5];
+disTh = 0.2;
+a0 = [0 0];
 l = 2;
 dim = size(qs,2);
+qs = [135,0,-45]*pi/180;
+pg = [1 2*sqrt(2)+2 pi/2];
 ps = to_end_pose(qs);
 Ns.p = ps;
 Ns.q = qs;
