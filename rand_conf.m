@@ -1,5 +1,7 @@
 %% reference to Giuseppe Oriolo's paper Probabilistic Motion Planning for Redundant Robots along Given End-Effector Paths
-function q = rand_conf(p,q_bias,inv_kine)
+% [q_b,succ]=inv_kine(p,qr,q_bias)
+% [feasible]=checkPath(qi,qj)
+function q = rand_conf(p,inv_kine,q_bias)
 if nargin == 1
     q_bias = nan;
 end
@@ -47,20 +49,39 @@ for i = 1:k
 end
 end
 
-function [tiem,len,path] = rrt_like(pPath,inv_kine)
-    function extend_like()
+function h = distanceCost(a,b)
+h = sum((a-b).^2,2).^(1/2);
+end
+
+function [tiem,len,path] = rrt_like(pPath,inv_kine,checkPath)
+    function p_new = extend_like()
         n = size(q0,2);
         m = size(pPath(1,1),2);
         q_rand = rand(1,n).*ones(1,n)*2*pi;
-        
+        q_rand_r = q_rand(end-(n-m)+1:end);
+        [~,idx] = min(distanceCost(Tree(:,m+1:end-1),q_rand(m+1,end-1)),[],1);
+        k = Tree(idx,end);
+        q_near = Tree(idx,1:end-1);
+        q_near_r = q_near(end-(n-m)+1:end);
+        dir = (q_rand_r-q_near_r)/norm(q_rand_r-q_near_r);
+        q_new_r = q_near_r+dir*d*sqrt(n);
+        [q_new_b,succ] = inv_kine(pPath(k+1,:),q_new_r,q_near);
+        q_new = [q_new_b,q_new_r];
+        if succ == 1 && checkPath(q_near,q_new)
+            Tree = [Tree;q_new,idx,k+1];
+            p_new = pPath(k+1,:);
+        else
+            p_new = nan;
+        end
     end
+d = 0.1;
 j = 0;
 maxTreeCnt = 100;
 p_new = nan;
 pathFound = false;
 while p_new~=pPath(end,:) && j<maxTreeCnt
     q0 = rand_conf(pPath(0,:),inv_kine);
-    Tree = [q0,-1];
+    Tree = [q0,-1,0]; % [q,parent,associated pose_idx]
     i = 0;
     maxAttemptTimes = 1000;
     while p_new~=pPath(end,:) || i<maxAttemptTimes
@@ -69,14 +90,15 @@ while p_new~=pPath(end,:) && j<maxTreeCnt
     end
     j = j+1;
 end
-if p_new == ps
-    pathFound = true;
-else
-    pathFound = false;
+if p_new ~= ps
     path = [];
     return;
 end
-if pathFound
-    % todo: find path
+% todo: find path
+path = Tree(end,1:n);
+prev = Tree(end,end-1);
+while prev>0
+    path = [Tree(prev,1:n);path];
+    prev = Tree(prev,end-1);
 end
 end
