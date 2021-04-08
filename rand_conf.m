@@ -27,6 +27,9 @@ end
 end
 
 function cPath = step(pPath,q_init,checkPath)
+% given two generic pose pi,pk belonging to the end-effector sequence
+% and a configuration q_i on the self-motion corresponding to p_i tries to
+% build a subsequence of configurations connecting p_i to p_k
 k = size(pPath,2);
 cPath = q_init;
 q = q_init;
@@ -55,8 +58,6 @@ end
 
 function [tiem,len,path] = rrt_like(pPath,inv_kine,checkPath)
     function p_new = extend_like()
-        n = size(q0,2);
-        m = size(pPath(1,1),2);
         q_rand = rand(1,n).*ones(1,n)*2*pi;
         q_rand_r = q_rand(end-(n-m)+1:end);
         [~,idx] = min(distanceCost(Tree(:,m+1:end-1),q_rand(m+1,end-1)),[],1);
@@ -82,10 +83,16 @@ pathFound = false;
 while p_new~=pPath(end,:) && j<maxTreeCnt
     q0 = rand_conf(pPath(0,:),inv_kine);
     Tree = [q0,-1,0]; % [q,parent,associated pose_idx]
+    n = size(q0,2);
+    m = size(pPath(1,1),2);
     i = 0;
     maxAttemptTimes = 1000;
-    while p_new~=pPath(end,:) || i<maxAttemptTimes
+    while p_new~=pPath(end,:) && i<maxAttemptTimes
         p_new = extend_like();
+        subPath = step(p_new,pPath(end,1:n)); % greedy strategy
+        if len(subPath)>0
+            path = subPath;
+        end
         i = i+1;
     end
     j = j+1;
@@ -95,7 +102,7 @@ if p_new ~= ps
     return;
 end
 % todo: find path
-path = Tree(end,1:n);
+path = [Tree(end,1:n);path];
 prev = Tree(end,end-1);
 while prev>0
     path = [Tree(prev,1:n);path];
