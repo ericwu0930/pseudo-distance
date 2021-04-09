@@ -213,7 +213,7 @@ end
 
 if ~pathFound
     time = inf;
-    pathLength = NaN
+    pathLength = nan;
 end
 
 time = toc;
