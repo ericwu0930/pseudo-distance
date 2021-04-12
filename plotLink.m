@@ -17,27 +17,24 @@ function [] = plotEnv(a0,obstacles)
 hold on;
 axis equal;
 plot(a0(1),a0(2),'k^');
-for i = 1:size(obstacles,3)
-    rec = obstacles(:,:,i);
-%     for j = 1:size(rec,1)-1
-%         plot(rec(j:j+1,1),rec(j:j+1,2),'k-');
-%     end
-%     plot([rec(end,1),rec(1,1)],[rec(end,2),rec(1,2)],'k-');
-    patch(rec([1:size(rec,1),1],1),rec([1:size(rec,1),1],2),'k');
-end
+% for i = 1:size(obstacles,3)
+%     rec = obstacles(:,:,i);
+% %     for j = 1:size(rec,1)-1
+% %         plot(rec(j:j+1,1),rec(j:j+1,2),'k-');
+% %     end
+% %     plot([rec(end,1),rec(1,1)],[rec(end,2),rec(1,2)],'k-');
+%     patch(rec([1:size(rec,1),1],1),rec([1:size(rec,1),1],2),'k');
+% end
 end
 
 %% forward kinematics of manipulator
-function [x] = fk(theta,a0,l)
-% theta  1xdc configuration space of manipulator deg
-% a0     position of manipulator's base
-% l      the length of manipulator
-% x      N x 2 or 3
-dc = size(theta,2);
-% 2-d environment
-x = zeros(dc+1,2);
+function x = fk(q,a0,l)
+n = size(q,2);
+x = zeros(n+1,2);
 x(1,:) = a0(:)';
-for i = 2:dc+1
-    x(i,:) = x(i-1,:)+[l*cos(theta(i-1)) l*sin(theta(i-1))];
+curQ = 0;
+for i = 2:n+1
+    curQ = curQ+q(i-1);
+    x(i,:) = x(i-1,:)+[l*cos(curQ) l*sin(curQ)];
 end
 end

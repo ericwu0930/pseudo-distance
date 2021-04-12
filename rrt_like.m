@@ -8,23 +8,26 @@ global d Tree;
 d = 0.1;
 j = 0;
 maxTreeCnt = 100;
-p_new = nan;
+disTh = 0.2;
 len = nan; % todo:cal len
 pathFound = false;
 tic;
 while ~pathFound && j<maxTreeCnt
-    q0 = rand_conf(pPath(1,:),inv_kine);
-    Tree = [q0,-1,0]; % [q,parent,associated pose_idx]
+    create(pPath,inv_kine);% [q,parent,associated pose_idx]
     i = 0;
-    maxAttemptTimes = 1000;
+    maxAttemptTimes = 10000;
     while ~pathFound && i<maxAttemptTimes
-        [p_new,p_idx,q_new] = extend_like();
-        if norm(p_new,pPath(end,1:n))
+        [p_new,p_idx,q_new] = extend_like(pPath,inv_kine,check_path);
+        if isnan(p_new)
+            i=i+1;
+            continue
+        end
+        if distanceCost(p_new,pPath(end,:))<disTh
             pathFound = true;
             break;
         end
-        subPath = step(pPath(p_idx,:),q_new,check_path); % greedy strategy
-        if len(subPath)>0
+        subPath = step(pPath(p_idx:end,:),q_new,inv_kine,check_path); % greedy strategy
+        if size(subPath,1)>0
             path = subPath;
             pathFound = true;
             break;
@@ -34,7 +37,7 @@ while ~pathFound && j<maxTreeCnt
     j = j+1;
 end
 time = toc;
-if p_new ~= ps
+if pathFound == false
     path = [];
     return;
 end
@@ -46,17 +49,28 @@ while prev>0
 end
 end
 
-function [p_new,p_idx,q_new] = extend_like(pPath)
-global n m Tree;
+function create(pPath,inv_kine)
+global Tree
+while true
+q0 = rand_conf(pPath(1,:),inv_kine);
+if ~isnan(q0)
+    break;
+end
+end
+Tree = [q0,-1,0]; % [q,parent,associated pose_idx]
+end
+
+function [p_new,p_idx,q_new] = extend_like(pPath,inv_kine,check_path)
+global n m Tree d;
 q_rand = rand(1,n).*ones(1,n)*2*pi;
 q_rand_r = q_rand(end-(n-m)+1:end);
-[~,idx] = min(distanceCost(Tree(:,m+1:end-1),q_rand(m+1,end-1)),[],1);
+[~,idx] = min(distanceCost(Tree(:,m+1:end-2),q_rand(m+1:end)),[],1);
 k = Tree(idx,end);
-q_near = Tree(idx,1:end-1);
+q_near = Tree(idx,1:end-2);
 q_near_r = q_near(end-(n-m)+1:end);
 dir = (q_rand_r-q_near_r)/norm(q_rand_r-q_near_r);
-q_new_r = q_near_r+dir*d*sqrt(n);
-[q_new_b,succ] = inv_kine(pPath(k+1,:),q_new_r,q_near);
+q_new_r = q_near_r+dir*(d-0.02);
+[q_new_b,succ] = inv_kine(pPath(k+1,:),q_new_r,q_near,d);
 q_new = [q_new_b,q_new_r];
 if succ == 1 && check_path(q_near,q_new)
     Tree = [Tree;q_new,idx,k+1];
@@ -96,11 +110,11 @@ else
 end
 end
 
-function cPath = step(pPath,q_init,check_path)
+function cPath = step(pPath,q_init,inv_kine,check_path)
 % given two generic pose pi,pk belonging to the end-effector sequence
 % and a configuration q_i on the self-motion corresponding to p_i tries to
 % build a subsequence of configurations connecting p_i to p_k
-k = size(pPath,2);
+k = size(pPath,1);
 cPath = q_init;
 q = q_init;
 maxAttemptTimes = 100; % the number of calls to RAND_CONF for each end-effector pose
@@ -108,12 +122,13 @@ for i = 2:k
     l = 0;
     succ = 0;
     while l<maxAttemptTimes && succ == 0
-        q_ = rand_conf(pPath(i,:),q);
-        if ~isnan(q_) && check_path(q,q_)
+        q_ = rand_conf(pPath(i,:),inv_kine,q);
+        if ~any(isnan(q_)) && check_path(q,q_)
             succ = 1;
             q = q_;
             cPath = [cPath;q];
         end
+        l = l+1;
     end
     if l>=maxAttemptTimes
         cPath = [];
@@ -123,5 +138,6 @@ end
 end
 
 function h = distanceCost(a,b)
-h = sum((a-b).^2,2).^(1/2);
+tmp = getMinDistVec(a,b);
+h = sum(tmp.^2,2).^(1/2);
 end
