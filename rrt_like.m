@@ -2,7 +2,7 @@
 % TODD function:
 % [q_b,succ]=inv_kine(p,qr,q_bias,d)
 % [feasible]=check_path(qi,qj)
-function [time,len,path] = rrt_like(pPath)
+function [time,len,path] = rrt_like(q,pPath)
 environment;
 global d Tree;
 d = 0.1;
@@ -13,7 +13,7 @@ len = nan; % todo:cal len
 pathFound = false;
 tic;
 while ~pathFound && j<maxTreeCnt
-    create(pPath,inv_kine);% [q,parent,associated pose_idx]
+    create(pPath(1,:),inv_kine,q);% [q,parent,associated pose_idx]
     i = 0;
     maxAttemptTimes = 10000;
     while ~pathFound && i<maxAttemptTimes
@@ -49,14 +49,15 @@ while prev>0
 end
 end
 
-function create(pPath,inv_kine)
+function create(p,inv_kine,q)
 global Tree
-while true
-q0 = rand_conf(pPath(1,:),inv_kine);
-if ~isnan(q0)
-    break;
-end
-end
+% while true
+% q0 = rand_conf(p,inv_kine);
+% if ~isnan(q0)
+%     break;
+% end
+% end
+q0 = q;
 Tree = [q0,-1,0]; % [q,parent,associated pose_idx]
 end
 
@@ -69,7 +70,7 @@ k = Tree(idx,end);
 q_near = Tree(idx,1:end-2);
 q_near_r = q_near(end-(n-m)+1:end);
 dir = (q_rand_r-q_near_r)/norm(q_rand_r-q_near_r);
-q_new_r = q_near_r+dir*(d-0.02);
+q_new_r = q_near_r+dir*d*sqrt(n)/n*(n-m);
 [q_new_b,succ] = inv_kine(pPath(k+1,:),q_new_r,q_near,d);
 q_new = [q_new_b,q_new_r];
 if succ == 1 && check_path(q_near,q_new)
@@ -104,7 +105,6 @@ if isnan(q_bias)
     qr = rand(1,n-m).*ones(1,n-m)*pi*2;
 else
     % have bias;
-    d = 0.1;
     q_bias_r = q_bias(end-n+m+1:end);
     qr = -d + (2*d)*rand(1,n-m)+q_bias_r;
 end
@@ -135,9 +135,4 @@ for i = 2:k
         return
     end
 end
-end
-
-function h = distanceCost(a,b)
-tmp = getMinDistVec(a,b);
-h = sum(tmp.^2,2).^(1/2);
 end

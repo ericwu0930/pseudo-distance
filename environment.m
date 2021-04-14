@@ -1,4 +1,7 @@
 % test evironment preparation for Oriolo's paper
+% define 4-link planar forward kinematics and inverse kinematics
+
+%% parameters definition
 global l a0 n m obstacles;
 obstacles = [];
 l = 2;
@@ -9,8 +12,9 @@ inv_kine = @ikine;
 for_kine = @fkine;
 check_path = @checkPath;
 
+%% inverse kinematics
 function [q_b,succ] = ikine(p,qr,q_bias,d)
-global l;
+global l m;
 x_g = p(1);
 y_g = p(2);
 gamma = p(3);
@@ -38,7 +42,15 @@ end
 %     q_b = q_b(1,:);
 % end
 succ = 1;
+gap = distanceCost(q_bias(1:m),theta(1,:));
 q_b = theta(1,:);
+for i = 2:size(theta,1)
+    tmp = distanceCost(q_bias(1:m),theta(i,:));
+    if gap>tmp
+        gap = tmp;
+        q_b = theta(i,:);
+    end
+end
 end
 
 function theta = ikine3r(p)
@@ -65,6 +77,7 @@ theta(1,3) = gamma - theta(1,2)-theta(1,1);
 theta(2,3) = gamma - theta(2,2)-theta(2,1);
 end
 
+%% forward kinematics
 function x = fkine(q)
 global a0 l n;
 x = zeros(n+1,2);
@@ -76,6 +89,7 @@ for i = 2:n+1
 end
 end
 
+%% collision avoidance
 function [feasible,colPoint,step] = checkPath(node,parent)
 global n;
 step = 0;
