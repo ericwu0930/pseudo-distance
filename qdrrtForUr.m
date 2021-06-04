@@ -155,8 +155,8 @@ point3 = [160,-68,30,-30,0,0]*pi/180;
 stepsize = 0.2;
 disTh = 0.2;
 maxFailedAttempts = 10000;
-source = point0;
-goal = point2;
+source = point2;
+goal = point3;
 dc = size(source,2);
 %% main proccession
 tic

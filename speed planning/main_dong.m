@@ -1,4 +1,4 @@
-%% 速度规划
+%% 速度规划 Dong
 %离散化
 clear;clc;
 load('nrbs.mat');
@@ -37,51 +37,28 @@ clear uu;
 u(1)=0;
 u(n)=0;
 
-%引入变量
-yita=sign(g1.*g2)*0.5+0.5;
-k1=-g1+(1-yita).*g2*2*h;
-k2=g1+g2.*yita*2*h;
-kb=-k1./k2;
-kf=1./kb;
-bb=abs((alpha*2*h)./k2);
-bf=abs((alpha*2*h)./k1);
-%前向扫描
-x=ones(100,1);
-for i=1:n-1
-    x(1)=u(i);
-    y=-inf;
-    z=inf;
-    j=1;
-    while z-y>0.00001
-        [y,kba]=min(kb(:,i)*x(j)+bb(:,i)); % 求算B
-        if u(i+1)<y
-            y=u(i+1);
-            kba=4; % flag
-        end
-        [z,jba]=max((x(j)-bf(:,i))./kf(:,i)); % 求算F^{-1}
-        if kba<4
-            x(j+1)=(kf(jba,i)*bb(kba,i)+bf(jba,i))/(1-kf(jba,i)*kb(kba,i));
-        else
-            x(j+1)=kf(jba,i)*u(i+1)+bf(jba,i);
-        end
-        if x(j+1)<x(j) % 严格递减
-        else
-            x(j+1)=x(j);
-        end
-        j=j+1;
-    end
-    u(i)=x(j);
-    u(i+1)=y; 
+f = -ones(1,n);
+lb = zeros(1,n);
+ub = u';
+Aeq = [1,zeros(1,n-1);zeros(1,n-1),1];
+beq = [0;0];
+b = alpha*ones(6*(n-2),1);
+% 根据加速度约束构造A矩阵
+A = zeros((n-2)*6,n);
+for i = 1:n-2
+    v1 = -g1(:,i+1)/4/h; % du/dt_{i-1}的系数
+    v2 = g2(:,i+1);      % du/dt_{i}的系数   
+    v3 = -v1;            % du/dt_{i+1}的系数
+    tmp = [v1,v2,v3;
+        -v1,-v2,-v3];
+    tmp = [zeros(6,i-1),tmp];
+    tmp = [tmp,zeros(6,n-size(tmp,2))];
+    A(6*i-5:6*i,:) = tmp;
 end
-%反向扫描
-i=n-1;
-while i>0
-    if min(kf(:,i)*u(i+1)+bf(:,i))<u(i)
-        u(i)=min(kf(:,i)*u(i+1)+bf(:,i));
-    end
-    i=i-1;
-end
-su=sqrt(u);%du/dt
+u = linprog(f,A,b,Aeq,beq,lb,ub);
+u = u';
+
+su=sqrt(u);%sqrt of u
 u1=u;
 t2=toc
 
