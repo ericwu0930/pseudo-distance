@@ -1,4 +1,5 @@
 %% 构造B样条曲线
+clear;clc;
 load('path.mat');
 dd = path(2:end,:)-path(1:end-1,:);
 d = 0;
@@ -27,14 +28,16 @@ nrbs = nrbs6d(path,u);
 % nrbs_1 =  nrbmak(path(1:3,:),u);
 % nrbs_2 = nrbmak(path(4:end,:),u);
 
+%% initial
 tic;
 vmax=0.5;%设置最大速度
 alpha=0.5;%设置三个方向最大加速度
 J=1;%设置三个方向最大跃度
 Ts=0.02;%时间步长
 %eps=1;%允许弓高误差
+mdl_ur10;
 
-n=np;%离散点数目
+n=3000;%离散点数目
 h=1/(n-1);%参数间距
 ii=linspace(0,1,n);%参数点
 %
@@ -61,6 +64,8 @@ nrbs2=my_nrbderiv(nrbs1);%B样条曲线的二阶导
 g2=my_nrbeval(nrbs2,ii);
 nrbs3=my_nrbderiv(nrbs2);%B样条曲线的三阶导
 g3=my_nrbeval(nrbs3,ii);
+
+
 
 % g1 = [g1_1;g1_2];
 % g2 = [g2_1;g2_2];
@@ -399,15 +404,25 @@ while abs(ut(i)-1)>0.00001
     i=i+1;
 end
 ut(i:end)=[];%每隔Ts的参数点
+
+% 清空
 C(:,i:end)=[];
 C1(:,i:end)=[];
 C2(:,i:end)=[];
 C3(:,i:end)=[];
-
-%% 下面是绘制位置，速度，加速度图像的代码，横轴为时间t
 tt=0:Ts:Ts*(i-2);
 
-% 三个方向位置
+% 速度映射
+[m,n] = size(C);
+v_xyz = zeros(3,n);
+for i=1:n
+    jacobian = ur10.jacob0(C(:,i)); 
+    v_xyz(:,i) = jacobian(1,1:3)*C1(1:3,i);
+end
+
+
+%% 下面是绘制位置，速度，加速度图像的代码，横轴为时间t
+% 六关节位置
 figure
 subplot(dim,1,1);
 plot(tt,C(1,:),'b--');
@@ -433,7 +448,23 @@ plot(tt,C(6,:),'b--');
 title("q6");
 xlabel("t");
 
-% 三个方向速度
+% 实际位置以及插补后位置
+pos_d = ones(3,length(path));
+pos = ones(3,length(C));
+for i = 1:length(path)
+    pos_d(:,i) = ur10.fkine(path(:,i)).t;
+end
+for i=1:length(C)
+    pos(:,i) = ur10.fkine(C(:,i)).t;
+end
+plot3(pos_d(1,:),pos_d(2,:),pos_d(3,:),'ro');
+grid on;
+axis equal;
+plot3(pos(1,:),pos(2,:),pos(3,:),'b*');
+
+
+
+% 六关节速度
 figure
 subplot(dim,1,1);
 plot(tt,C1(1,:),'b--');
@@ -465,7 +496,7 @@ xlabel("t");
 % xlabel("t");
 % title("V");
 
-% 三个方向加速度
+% 六关节加速度
 figure
 subplot(dim,1,1);
 plot(tt,C2(1,:),'b--');
