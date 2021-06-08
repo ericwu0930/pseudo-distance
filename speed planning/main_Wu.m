@@ -1,4 +1,3 @@
-function t2 = getBSplineDong(np)
 %% 构造B样条曲线
 load('path.mat');
 dd = path(2:end,:)-path(1:end-1,:);
@@ -24,39 +23,48 @@ for i = p+2:m-p
     u(i) = 1/p * sum(u_(i-p:i-1));
 end
 path = path';
-nrbs_1 =  nrbmak(path(1:3,:),u);
-nrbs_2 = nrbmak(path(4:end,:),u);
+nrbs = nrbs6d(path,u);
+% nrbs_1 =  nrbmak(path(1:3,:),u);
+% nrbs_2 = nrbmak(path(4:end,:),u);
 
 tic;
 vmax=0.5;%设置最大速度
 alpha=0.5;%设置三个方向最大加速度
 J=1;%设置三个方向最大跃度
 Ts=0.02;%时间步长
-eps=1;%允许弓高误差
+%eps=1;%允许弓高误差
 
 n=np;%离散点数目
 h=1/(n-1);%参数间距
 ii=linspace(0,1,n);%参数点
+%
+% [g_1,~]=nrbeval(nrbs_1,ii);%g是每个参数点的曲线值
+% nrbs1_1=nrbderiv(nrbs_1);%求一阶导后的B样条曲线
+% [g1_1,~]=nrbeval(nrbs1_1,ii);
+% nrbs2_1=nrbderiv(nrbs1_1);%B样条曲线的二阶导
+% [g2_1,~]=nrbeval(nrbs2_1,ii);
+% nrbs3_1=nrbderiv(nrbs2_1);%B样条曲线的三阶导
+% [g3_1,~]=nrbeval(nrbs3_1,ii);
+%
+% [g_2,~]=nrbeval(nrbs_2,ii);%g是每个参数点的曲线值
+% nrbs1_2=nrbderiv(nrbs_2);%求一阶导后的B样条曲线
+% [g1_2,~]=nrbeval(nrbs1_2,ii);
+% nrbs2_2=nrbderiv(nrbs1_2);%B样条曲线的二阶导
+% [g2_2,~]=nrbeval(nrbs2_2,ii);
+% nrbs3_2=nrbderiv(nrbs2_2);%B样条曲线的三阶导
+% [g3_2,~]=nrbeval(nrbs3_2,ii);
 
-[g_1,~]=nrbeval(nrbs_1,ii);%g是每个参数点的曲线值
-nrbs1_1=nrbderiv(nrbs_1);%求一阶导后的B样条曲线
-[g1_1,~]=nrbeval(nrbs1_1,ii);
-nrbs2_1=nrbderiv(nrbs1_1);%B样条曲线的二阶导
-[g2_1,~]=nrbeval(nrbs2_1,ii);
-nrbs3_1=nrbderiv(nrbs2_1);%B样条曲线的三阶导
-[g3_1,~]=nrbeval(nrbs3_1,ii);
+g=my_nrbeval(nrbs,ii);%g是每个参数点的曲线值
+nrbs1=my_nrbderiv(nrbs);%求一阶导后的B样条曲线
+g1=my_nrbeval(nrbs1,ii);
+nrbs2=my_nrbderiv(nrbs1);%B样条曲线的二阶导
+g2=my_nrbeval(nrbs2,ii);
+nrbs3=my_nrbderiv(nrbs2);%B样条曲线的三阶导
+g3=my_nrbeval(nrbs3,ii);
 
-[g_2,~]=nrbeval(nrbs_2,ii);%g是每个参数点的曲线值
-nrbs1_2=nrbderiv(nrbs_2);%求一阶导后的B样条曲线
-[g1_2,~]=nrbeval(nrbs1_2,ii);
-nrbs2_2=nrbderiv(nrbs1_2);%B样条曲线的二阶导
-[g2_2,~]=nrbeval(nrbs2_2,ii);
-nrbs3_2=nrbderiv(nrbs2_2);%B样条曲线的三阶导
-[g3_2,~]=nrbeval(nrbs3_2,ii);
-
-g1 = [g1_1;g1_2];
-g2 = [g2_1;g2_2];
-g3 = [g3_1;g3_2];
+% g1 = [g1_1;g1_2];
+% g2 = [g2_1;g2_2];
+% g3 = [g3_1;g3_2];
 
 %% 首先不考虑跃度约束
 % 下面的u为优化参数，物理含义为曲线参数对时间求导后平方
@@ -104,7 +112,7 @@ for i=1:n-1
         j=j+1;
     end
     u(i)=x(j);
-    u(i+1)=y; 
+    u(i+1)=y;
 end
 %反向扫描
 i=n-1;
@@ -118,7 +126,7 @@ su=sqrt(u);%du/dt
 u1=u;
 t2=toc
 
-% 下面进行考虑跃度约束的速度规划
+%% 下面进行考虑跃度约束的速度规划
 tic
 k1=su.*(g1/2/h^2-3*g2/4/h);
 kk1=k1;
@@ -129,24 +137,30 @@ kk3=k3;
 a1=diag(k2(1,2:n-1))+diag(k1(1,3:n-1),-1)+diag(k3(1,2:n-2),1);
 a2=diag(k2(2,2:n-1))+diag(k1(2,3:n-1),-1)+diag(k3(2,2:n-2),1);
 a3=diag(k2(3,2:n-1))+diag(k1(3,3:n-1),-1)+diag(k3(3,2:n-2),1);
-A=zeros(6*n,n-2);%线性规划不等式约束Ax<=b
+a4=diag(k2(4,2:n-1))+diag(k1(4,3:n-1),-1)+diag(k3(4,2:n-2),1);
+a5=diag(k2(5,2:n-1))+diag(k1(5,3:n-1),-1)+diag(k3(5,2:n-2),1);
+a6=diag(k2(6,2:n-1))+diag(k1(6,3:n-1),-1)+diag(k3(6,2:n-2),1);
+A=zeros(dim*2*n,n-2);%线性规划不等式约束Ax<=b
 A(1:n-2,:)=a1;
 A(n-1:2*n-4,:)=a2;
 A(2*n-3:3*n-6,:)=a3;
-A(3*n-5:3*n-3,1)=J/2/u(2);
-for i=1:3
+A(3*n-5:4*n-8,:)=a4;
+A(4*n-7:5*n-10,:)=a5;
+A(5*n-9:6*n-12,:)=a6;
+A(6*n-11:6*n-6,1)=J/2/u(2);
+for i=1:6
     if g1(i,3)==0 && g1(i,2)==0
-        A(3*n-5+i-1,2)=0;
+        A(6*n-11+i-1,2)=0;
     else
-        A(3*n-5+i-1,2)=(g1(i,3).^2)./g1(i,2)/8*su(2)*(n-1)^2;
+        A(6*n-11+i-1,2)=(g1(i,3).^2)./g1(i,2)/8*su(2)*(n-1)^2;
     end
 end
-A(3*n-2:3*n,n-2)=J/2/u(n-1);
-for i=1:3
+A(6*n-5:6*n,n-2)=J/2/u(n-1);
+for i=1:6
     if g1(i,n-2)==0 && g1(i,n-1)==0
-        A(3*n-2+i-1,n-3)=0;
+        A(6*n-5+i-1,n-3)=0;
     else
-        A(3*n-2+i-1,n-3)=(g1(i,n-2).^2)./g1(i,n-1)/8*su(n-1)*(n-1)^2;
+        A(6*n-5+i-1,n-3)=(g1(i,n-2).^2)./g1(i,n-1)/8*su(n-1)*(n-1)^2;
     end
 end
 k1=-k1;
@@ -155,23 +169,29 @@ k3=-k3;
 a1=diag(k2(1,2:n-1))+diag(k1(1,3:n-1),-1)+diag(k3(1,2:n-2),1);
 a2=diag(k2(2,2:n-1))+diag(k1(2,3:n-1),-1)+diag(k3(2,2:n-2),1);
 a3=diag(k2(3,2:n-1))+diag(k1(3,3:n-1),-1)+diag(k3(3,2:n-2),1);
-A(3*n+1:4*n-2,:)=a1;
-A(4*n-1:5*n-4,:)=a2;
-A(5*n-3:6*n-6,:)=a3;
-A(6*n-5:6*n-3,1)=J/2/u(2);
-for i=1:3
+a4=diag(k2(4,2:n-1))+diag(k1(4,3:n-1),-1)+diag(k3(4,2:n-2),1);
+a5=diag(k2(5,2:n-1))+diag(k1(5,3:n-1),-1)+diag(k3(5,2:n-2),1);
+a6=diag(k2(6,2:n-1))+diag(k1(6,3:n-1),-1)+diag(k3(6,2:n-2),1);
+A(6*n+1:7*n-2,:)=a1;
+A(7*n-1:8*n-4,:)=a2;
+A(8*n-3:9*n-6,:)=a3;
+A(9*n-5:10*n-8,:)=a4;
+A(10*n-7:11*n-10,:)=a5;
+A(11*n-9:12*n-12,:)=a6;
+A(12*n-11:12*n-6,1)=J/2/u(2);
+for i=1:6
     if g1(i,3)==0 && g1(i,2)==0
-        A(6*n-5+i-1,2)=0;
+        A(12*n-11+i-1,2)=0;
     else
-        A(6*n-5+i-1,2)=-1*(g1(i,3).^2)./g1(i,2)/8*su(2)*(n-1)^2;
+        A(12*n-11+i-1,2)=-1*(g1(i,3).^2)./g1(i,2)/8*su(2)*(n-1)^2;
     end
 end
-A(6*n-2:6*n,n-2)=J/2/u(n-1);
-for i=1:3
+A(12*n-5:12*n,n-2)=J/2/u(n-1);
+for i=1:6
     if g1(i,n-2)==0 && g1(i,n-1)==0
-        A(6*n-2+i-1,n-3)=0;
+        A(12*n-5+i-1,n-3)=0;
     else
-        A(6*n-2+i-1,n-3)=-1*(g1(i,n-2).^2)./g1(i,n-1)/8*su(n-1)*(n-1)^2;
+        A(12*n-5+i-1,n-3)=-1*(g1(i,n-2).^2)./g1(i,n-1)/8*su(n-1)*(n-1)^2;
     end
 end
 k1=-g1+2*h*g2;
@@ -185,10 +205,19 @@ a2=[a2 ls];
 a3=diag(k1(3,2:n-2))+diag(g1(3,2:n-3),1);
 ls(n-3)=g1(3,n-2);
 a3=[a3 ls];
-A=[A;a1;a2;a3;-a1;-a2;-a3];
+a4=diag(k1(4,2:n-2))+diag(g1(4,2:n-3),1);
+ls(n-3)=g1(4,n-2);
+a4=[a4 ls];
+a5=diag(k1(5,2:n-2))+diag(g1(5,2:n-3),1);
+ls(n-3)=g1(5,n-2);
+a5=[a5 ls];
+a6=diag(k1(6,2:n-2))+diag(g1(6,2:n-3),1);
+ls(n-3)=g1(6,n-2);
+a6=[a6 ls];
+A=[A;a1;a2;a3;a4;a5;a6;-a1;-a2;-a3;-a4;-a5;-a6];
 A=sparse(A);
-b=J*3/2*ones(6*n,1);
-b=[b;2*h*alpha*ones(6*n-18,1)];
+b=J*3/2*ones(12*n,1);
+b=[b;2*h*alpha*ones(12*n-36,1)];
 
 f=(sum(g1.^2))';
 f=-1*f(2:n-1);%目标函数min f^(T)*x
@@ -198,7 +227,7 @@ lb=zeros(n-2,1);%x>=lb
 un=linprog(f,A,b,[],[],lb,u(2:n-1));
 un=un';
 u(2:n-1)=un;
-su=sqrt(u); % du/dt
+su=sqrt(u);
 t3=toc
 %% 插值
 % 对规划的速度进行插值
@@ -320,9 +349,9 @@ ut=zeros(1,tn);%插补得到的参数点
 C=zeros(dim,tn);%位置坐标
 C1=zeros(dim,tn);%速度
 C2=zeros(dim,tn);%加速度
-C3=zeros(dim,tn);%加速度
+C3=zeros(dim,tn);%跃度
 
-i=1; 
+i=1;
 while abs(ut(i)-1)>0.00001
     
     vu1=fnval(pp,ut(i));
@@ -332,22 +361,40 @@ while abs(ut(i)-1)>0.00001
     ju1=fnval(pp2,ut(i));
     ju=ju1/2*vu;  % 得到 d3u/dt3
     
-    C(1:3,i)=nrbeval(nrbs_1,ut(i));
-    [c1_1,~]=nrbeval(nrbs1_1,ut(i));
-    C1(1:3,i)=c1_1*vu;
-    [c2_1,~]=nrbeval(nrbs2_1,ut(i));
-    C2(1:3,i)=c1_1*au+c2_1*vu1;
-    [c3_1,~]=nrbeval(nrbs3_1,ut(i));
-    C3(1:3,i)=(c1_1*ju1/2+c2_1*3/2*au1+c3_1*vu1)*vu;
+    %     C(1:3,i)=nrbeval(nrbs_1,ut(i));
+    %     [c1_1,~]=nrbeval(nrbs1_1,ut(i));
+    %     C1(1:3,i)=c1_1*vu;
+    %     [c2_1,~]=nrbeval(nrbs2_1,ut(i));
+    %     C2(1:3,i)=c1_1*au+c2_1*vu1;
+    %     [c3_1,~]=nrbeval(nrbs3_1,ut(i));
+    %     C3(1:3,i)=(c1_1*ju1/2+c2_1*3/2*au1+c3_1*vu1)*vu;
+    %
+    %     C(4:6,i)=nrbeval(nrbs_2,ut(i));
+    %     [c1_2,~]=nrbeval(nrbs1_2,ut(i));
+    %     C1(4:6,i)=c1_2*vu;
+    %     [c2_2,~]=nrbeval(nrbs2_2,ut(i));
+    %     C2(4:6,i)=c1_2*au+c2_2*vu1;
+    %     [c3_2,~]=nrbeval(nrbs3_2,ut(i));
+    %     C3(4:6,i)=(c1_2*ju1/2+c2_2*3/2*au1+c3_2*vu1)*vu;
     
-    C(4:6,i)=nrbeval(nrbs_2,ut(i));
-    [c1_2,~]=nrbeval(nrbs1_2,ut(i));
-    C1(4:6,i)=c1_2*vu;
-    [c2_2,~]=nrbeval(nrbs2_2,ut(i));
-    C2(4:6,i)=c1_2*au+c2_2*vu1;
-    [c3_2,~]=nrbeval(nrbs3_2,ut(i));
-    C3(4:6,i)=(c1_2*ju1/2+c2_2*3/2*au1+c3_2*vu1)*vu;
-  
+    C(:,i)=my_nrbeval(nrbs,ut(i));
+    c1=my_nrbeval(nrbs1,ut(i));
+    C1(:,i)=c1*vu;
+    c2=my_nrbeval(nrbs2,ut(i));
+    C2(:,i)=c1*au+c2*vu1;
+    c3=my_nrbeval(nrbs3,ut(i));
+    C3(:,i)=(c1*ju1/2+c2*3/2*au1+c3*vu1)*vu;
+    
+    % for what?
+%     for j=1:6
+%         if C3(j,i)>1
+%             C3(j,i)=1+(C3(j,i)-1)/10;
+%         end
+%         if C3(j,i)<-1
+%             C3(j,i)=-1-(-1-C3(j,i))/10;
+%         end
+%     end
+    
     ut(i+1)=ut(i)+vu*Ts+au*Ts^2/2+ju*Ts^3/6; %使用泰勒公式进行插补
     i=i+1;
 end

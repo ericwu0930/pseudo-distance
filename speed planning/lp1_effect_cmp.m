@@ -8,8 +8,8 @@ chen = zeros(8,6);
 np = 1000;
 for i = 1:6
     for j = 1:8
-        dong(j,i) = getBSplineDong(np);
-        chen(j,i) = getBSpline(np);
+        dong(j,i) = lp1Dong(np);
+        chen(j,i) = lpqConsolini(np);
     end
     np = np+500;
 end

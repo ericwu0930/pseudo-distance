@@ -1,4 +1,4 @@
-function t2 = getBSplineDong(np)
+function t2 = lp1Dong(np)
 %% 构造B样条曲线
 load('path.mat');
 dd = path(2:end,:)-path(1:end-1,:);
