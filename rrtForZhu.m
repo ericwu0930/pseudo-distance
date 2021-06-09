@@ -1,7 +1,7 @@
 % rrt for Zhu Problem
 function [time,pathLength]=rrtForZhu()
 %% Zhu's problem environment
-display = false;
+display = true;
 global obstacles;
 global a0;
 global dc;
@@ -38,7 +38,7 @@ failedAttempts = 0;
 counter = 0;
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
-    if rand <=1
+    if rand <=0.3
         sample = rand(1,dc).* [pi*2 pi*2 pi*2];
     else
         sample = goal;
