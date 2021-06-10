@@ -1,82 +1,127 @@
-function isCol = gjk2d(v1,v2)
-iterCount = 0;
-idx = 1;
-p1 = mean(v1);
-p2 = mean(v2);
-d = p1-p2;
-if d(1) == 0 && d(2) ==0
-    d(1) = 1;
+function flag = gjk2d(shape1,shape2,iterations)
+% GJK Gilbert-Johnson-Keerthi Collision detection implementation.
+% Returns whether two convex shapes are are penetrating or not
+% (true/false). Only works for CONVEX shapes.
+%
+% Inputs:
+%   shape1: 
+ %   must have fields for XData,YData, which are the x,y 
+%   coordinates of the vertices. Can be the same as what comes out of a 
+%   PATCH object. It isn't required that the points form faces like patch
+%   data. This algorithm will assume the convex hull of the x,y points
+%   given.
+%
+%   shape2: 
+%   Other shape to test collision against. Same info as shape1.
+%   
+%   iterations: 
+%   The algorithm tries to construct a triangle encompassing
+%   the origin. This proves the objects have collided. If we fail within a
+%   certain number of iterations, we give up and say the objects are not
+%   penetrating. Low iterations means a higher chance of false-NEGATIVES
+%   but faster computation. As the objects penetrate more, it takes fewer
+%   iterations anyway, so low iterations is not a huge disadvantage.
+%   
+% Outputs:
+%   flag:
+%   true - objects collided
+%   false - objects not collided
+%
+%  
+%   This script is adapted from the work of Matthew Sheen, 2016
+%   
+%   Qianli Ma, 2016 qianli.ma622@gmail.com Johns Hopkins University
+%
+
+%Point 1 and 2 selection (line segment)
+v = [0.8 0.5];
+[a,b] = pickLine(v,shape2,shape1);
+
+%Point 3 selection (triangle)
+[~,~,~,flag] = pickTriangle(a,b,shape2,shape1,iterations);
+
 end
-simplex = zeros(3,size(v1,2));
-simplex(1,:) = support(v1,v2,d);
-a = simplex(1,:);
-if a*d' <=0
-    isCol = 0;
-    return;
+
+function [a,b] = pickLine(v,shape1,shape2)
+%Construct the first line of the simplex
+b = support(shape2,shape1,v);
+a = support(shape2,shape1,-v);
 end
-d = -a;
-while 1
-    iterCount = iterCount+1;
-    idx = idx+1;
-    simplex(idx,:) = support(v1,v2,d);
-    a = simplex(idx,:);
-    if a*d'<=0
-        isCol = 0;
-        return;
-    end
-    ao = -a;
-    if idx < 3
-        b = simplex(1,:);
-        ab = b-a;
-        d = tripleProduct(ab,ao,ab);
-        if norm(d)^2 == 0
-            d = perpendicular(ab);
-        end
-        continue;
-    end
-    
-    b = simplex(2,:);
-    c = simplex(1,:);
+
+function [a,b,c,flag] = pickTriangle(a,b,shape1,shape2,IterationAllowed)
+flag = 0; %So far, we don't have a successful triangle.
+
+%First try:
+ab = b-a;
+ao = -a;
+v = cross(cross(ab,ao),ab); % v is perpendicular to ab pointing in the general direction of the origin.
+
+c = b;
+b = a;
+a = support(shape2,shape1,v);
+
+for i = 1:IterationAllowed %iterations to see if we can draw a good triangle.
+    %Time to check if we got it:
     ab = b-a;
+    ao = -a;
     ac = c-a;
     
-    acperp = tripleProduct(ab,ac,ac);
+    %Normal to face of triangle
+    abc = cross(ab,ac);
     
-    if acperp*ao' >= 0
-        d = acperp;
-    else
-        abperp = tripleProduct(ac,ab,ab);
-        if abperp*ao' < 0 
-            isCol = 1;
-            return;
+    %Perpendicular to AB going away from triangle
+    abp = cross(ab,abc);
+    %Perpendicular to AC going away from triangle
+    acp = cross(abc,ac);
+    
+    %First, make sure our triangle "contains" the origin in a 2d projection
+    %sense.
+    %Is origin above (outside) AB?   
+    if dot(abp,ao) > 0
+        if dot(ab, ao) > 0
+            c = b; %Throw away the furthest point and grab a new one in the right direction
+            b = a;
+            v = abp; %cross(cross(ab,ao),ab);
+        else
+            v = ao;
+            c = b;
+            b = a;
         end
-        simplex(1,:) = simplex(2,:);
-        d = abperp;
+    %Is origin above (outside) AC?
+    elseif dot(acp, ao) > 0
+        if dot(ac, ao) > 0
+            b = a;
+            v = acp; %cross(cross(ac,ao),ac);
+        else
+            v = ao;
+            c = b;
+            b = a;
+        end
+    else
+        flag = 1;
+        break; %We got a good one.
     end
+    a = support(shape2,shape1,v);
     
-    simplex(2,:) = simplex(3,:);
-    idx = idx - 1;
+    if dot(v, a) < 0
+        break
+    end
 end
-isCol = 0;
-end
-
-function point = perpendicular(v)
-point = [v(2),-v(1)];
 end
 
-function point = tripleProduct(v1,v2,v3)
-point = v1*v3'*v2-v2*v3'*v1;
+function point = getFarthestInDir(shape, v)
+%Find the furthest point in a given direction for a shape
+XData = shape.XData; % Making it more compatible with previous MATLAB releases.
+YData = shape.YData;
+dotted = XData*v(1) + YData*v(2);
+[~,rowIdx] = max(dotted);
+point = [XData(rowIdx), YData(rowIdx)];
 end
 
-function point = support(v1,v2,d)
-idx1 = indexOfFurthestPoint(v1,d);
-idx2 = indexOfFurthestPoint(v2,-d);
-point = v1(idx1,:)-v2(idx2,:);
-end
-
-function idx = indexOfFurthestPoint(v1,d)
-% Get furthest vertex along a certain direction
-d_=repmat(d,size(v1,1),1);
-product = sum(v1.*d_,2);
-[~,idx]=max(product);
+function point = support(shape1,shape2,v)
+%Support function to get the Minkowski difference.
+point1 = getFarthestInDir(shape1, v);
+point2 = getFarthestInDir(shape2, -v);
+point = point1 - point2; % Minkowski difference on points
+point = [point 0]; % represent the 2D point in 3D for compatibility with pickTriangle function
 end

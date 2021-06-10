@@ -11,10 +11,11 @@ p2 = plot3(temp(2,1), temp(2,2),temp(2,3),'mh','MarkerFaceColor','m'); %target
 p3 = plot3(temp(:,1),temp(:,2),temp(:,3),'b.');
 for i = 1:length(adjacency)
     for j = 1:length(adjacency{i})
-        p4 = plot3([temp(i,1);temp(adjacency{i}(j),1)],[temp(i,2);temp(adjacency{i}(j),2)],[temp(i,3);temp(adjacency{i}(j),3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
+        %p4 = plot3([temp(i,1);temp(adjacency{i}(j),1)],[temp(i,2);temp(adjacency{i}(j),2)],[temp(i,3);temp(adjacency{i}(j),3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
 %         pause(0.01);
     end
 end
+title("Roadmap");
 
 t = cputime;
 % node = [idx, historic cost, heuristic cost, total cost, parent idx]

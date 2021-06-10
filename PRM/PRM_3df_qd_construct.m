@@ -10,6 +10,7 @@ global obstacles;
 global a0;
 global dc;
 global l;
+global Q;
 rec1 = [9 0;10 0;10 8.5;9 8.5];
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 10.5;10 10.5;10 18;9 18];
@@ -21,8 +22,12 @@ obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
 obstacles(:,:,4) = rec4;
 obstacles(:,:,5) = rec5;
+Q = [0,-1;
+    sqrt(3)/2,1/2;
+    -sqrt(3)/2,1/2];
 node = 500;
 nghb_cnt = 5;
+adj_step = 0.2; % 调整步长
 % figure;
 % hold on;
 % grid on;
@@ -43,7 +48,17 @@ while length(temp)<node+2
     % if okay random point, put into array (temp)
     if det(x) == false% 碰撞检测
         temp = [temp;x];
-%         p3 = plot3(x(1),x(2),x(3),'b.'); % plot nodes
+    else
+        % 使用伪距离生成新的节点
+        adjustAttempts = 1;
+        while adjustAttempts < 4
+            newPoint = getNewPoint(x,adj_step);
+            if det(newPoint) == false
+                temp = [temp;newPoint];
+                break;
+            end
+            adjustAttempts = adjustAttempts+1;
+        end
     end
 end
 
@@ -97,6 +112,24 @@ for i=0:0.05:sqrt(sum((delta).^2))
 end
 end
 
+function newPoint = getNewPoint(point,cstep)
+%% 通过Q距离的微分得到新的点
+global obstacles;
+global Q;
+x = fk(point);
+dd = 0;
+for i = 1:size(x,1)-1
+    for j = 1:size(obstacles,3)
+        [xstar,fval,qe]=qDistance2d(x(i:i+1,:),obstacles(:,:,j),Q);
+        if fval<=0
+            dd = dd + gradN(x(i:i+1,:),obstacles(:,:,j),Q,xstar,point,i,qe);
+        end
+    end
+end
+dd = dd(:)';
+newPoint = point+cstep*dd/norm(dd);
+end
+
 function isCols = det(config)
 global obstacles;
 x = fk(config);
@@ -142,6 +175,40 @@ x(1,:) = a0(:)';
 for i = 2:dc+1
     x(i,:) = x(i-1,:)+[l*cos(theta(i-1)) l*sin(theta(i-1))];
 end
+end
+
+function dd = gradN(VA,VB,VQ,xstar,theta,j,qe)
+global l;
+[~,cq]=size(VQ);
+[ra,~]=size(VA);
+[rb,~]=size(VB);
+if sum(xstar~=0) ~= cq+2
+    dd = 0;
+    return;
+end
+dPA1 = [0,-l*sin(theta(1)),-l*sin(theta(1)),-l*sin(theta(1));
+    0,l*cos(theta(1)),l*cos(theta(1)),l*cos(theta(1))];
+dPA2 = [0,0,-l*sin(theta(2)),-l*sin(theta(2));
+    0,0,l*cos(theta(2)),l*cos(theta(2))];
+dPA3 = [0,0,0,-l*sin(theta(3));
+    0,0,0,l*cos(theta(3))];
+dPA1=dPA1(:,j:j+1);
+dPA2=dPA2(:,j:j+1);
+dPA3=dPA3(:,j:j+1);
+
+anz=xstar(1:ra,:)~=0;
+bnz=xstar(ra+1:ra+rb,:)~=0;
+PQ = VQ(qe,:)';
+tmp = VA(anz,:);
+PA=tmp(2:end,:)-tmp(1,:);
+PA=PA';
+tmp = VB(bnz,:);
+PB=tmp(2:end,:)-tmp(1,:);
+PB=PB';
+astar = xstar(anz);
+dd(1,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA1(:,anz)*astar);
+dd(2,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA2(:,anz)*astar);
+dd(3,:)=[1,zeros(1,cq-1)]*inv([PQ,-PA,PB])*(-dPA3(:,anz)*astar);
 end
 
 % auxiliary function
