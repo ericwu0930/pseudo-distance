@@ -20,7 +20,7 @@ obstacles(:,:,1) = rec1;
 obstacles(:,:,2) = rec2;
 obstacles(:,:,3) = rec3;
 obstacles(:,:,4) = rec4;
-node = 1000;
+node = 2500;
 nghb_cnt = 5;
 figure;
 grid on;
@@ -35,8 +35,8 @@ dc = size(start,2);
 
 t = cputime; % run time
 temp = [start;target];
-p1 = plot(temp(1,2), temp(1,1),'kh','MarkerFaceColor','g'); %start
-p2 = plot(temp(2,2), temp(2,1),'mh','MarkerFaceColor','m'); %target
+p1 = plot(temp(1,1), temp(1,2),'kh','MarkerFaceColor','g'); %start
+p2 = plot(temp(2,1), temp(2,2),'mh','MarkerFaceColor','m'); %target
 % get random nodes until total nodes is reach
 while length(temp)<node+2
     x = rand(1,dc).* [pi*2 pi*2 pi*2]; % random value
@@ -52,15 +52,14 @@ end
 
 adjacency = cell(node+2,1); % adjacency list
 for i=1:node+2
-    newList = [temp(1:i-1,:);temp(i+1:end,:)];
-    distances = distanceCost(temp(i,:),newList);
+    distances = distanceCost(temp(i,:),temp);
     [P,I] = sort(distances);
-    k = min(numel(P),nghb_cnt);
-    nghb_nodes = newList(I(1:k),:);
+    k = min(numel(P),nghb_cnt+1);
+    nghb_nodes = temp(I(2:k),:);
     for j=1:length(nghb_nodes)
         [feasible,~,~] = checkPath(temp(i,:),nghb_nodes(j,:));
         if feasible
-            adjacency{i} = [adjacency{i};I(j)];adjacency{I(j)}=[adjacency{I(j)};i];
+            adjacency{i} = [adjacency{i};I(j+1)];adjacency{I(j+1)}=[adjacency{I(j+1)};i];
             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
             pause(0.01);
         end
@@ -125,24 +124,28 @@ while prev>0
 end
 
 % visualize the path
-p5 = plot(path(:,2),path(:,1),'color','c');
+p5 = plot3(path(:,1),path(:,2),path(:,3),'color','c','LineWidth',2);
 %legend([p1 p2 p3(1) p4 p5], {'Start','Target', 'Nodes', 'Potental Paths', 'Path'}, 'Location', 'southeast')
 legend([p1 p2 p3(1) p5], {'Start','Target', 'Nodes', 'Path'}, 'Location', 'bestoutside')
-title(['PRM in Environment ', num2str(Environ)]) % title
+% title(['PRM in Environment ', num2str(Environ)]) % title
 hold off
 figure;
 plotLink(a0,l,path,obstacles);
+
 %% Time and cost function (recalculated just in case)
 
 % time
 e = cputime-t;
 
 % cost function
-d = diff([path(:,2), path(:,1)]);
+d = diff([path(:,1), path(:,2) path(:,3)]);
 total_length = sum(sqrt(sum(d.*d,2)));
 fprintf("Processing Time: %.2f sec \t Path Length: %.2f bits \n", e, total_length);
 %saveas(p5,'image1.png');
 
+
+
+%% auxiliary function
 %% Cost function calculation
 
 % historic
@@ -152,7 +155,8 @@ end
 
 % heuristic
 function h=heu(c,d)
-h = sqrt(sum((c-d).^2));
+% h = sqrt(sum((c-d).^2));
+h=0;
 end
 
 %% collision detection function
@@ -173,7 +177,7 @@ delta = getMinDistVec(node,parent);
 dir = delta/norm(delta);
 for i=0:0.05:sqrt(sum((delta).^2))
     feasible = ~det(p1+i*dir);
-    plotLink(a0,l,p1+i*dir,obstacles);
+%     plotLink(a0,l,p1+i*dir,obstacles);
     if feasible == 0
         colPoint = p1+i*dir;
         step = i;
@@ -221,7 +225,6 @@ for i = 2:dc+1
 end
 end
 
-% auxiliary function
 function minDistVec = getMinDistVec(p1,p2)
 p1 = mod(p1,2*pi);
 p2 = mod(p2,2*pi);
