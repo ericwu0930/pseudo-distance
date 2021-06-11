@@ -1,6 +1,9 @@
 %% plot environment
-function handle = plotLink(a0,l,theta,obstacles)
-plotEnv(a0,obstacles);
+function handle = plotLink(three_dof,theta,obstacles)
+a0 = three_dof.a0;
+l = three_dof.l;
+plotEnv(obstacles);
+plot(a0(1),a0(2),'k^');
 [r,~] = size(theta);
 for i = 1:r
     x=fk(theta(i,:),a0,l);
@@ -13,10 +16,9 @@ for i = 1:r
 end
 end
 
-function [] = plotEnv(a0,obstacles)
+function [] = plotEnv(obstacles)
 hold on;
 axis equal;
-plot(a0(1),a0(2),'k^');
 for i = 1:size(obstacles,3)
     rec = obstacles(:,:,i);
     for j = 1:size(rec,1)-1
