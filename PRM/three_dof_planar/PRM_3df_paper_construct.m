@@ -44,14 +44,14 @@ while length(temp)<node
     
     % if okay random point, put into array (temp)
     if checkPoint(x,obstacles,three_dof) == false% 碰撞检测
-        temp = [temp;x];
+        temp = [temp;[x,0]];
     else
         % 使用伪距离生成新的节点
         adjustAttempts = 1;
         while adjustAttempts < 4
             newPoint = getNewPoint(x,adj_step);
             if checkPoint(newPoint,obstacles,three_dof) == false
-                temp = [temp;newPoint];
+                temp = [temp;[newPoint,1]];
                 break;
             end
             adjustAttempts = adjustAttempts+1;
@@ -97,6 +97,7 @@ end
 dd = dd(:)';
 newPoint = point+cstep*dd/norm(dd);
 end
+
 
 %% forward kinematics of manipulator
 function [x] = fk(theta)
