@@ -21,8 +21,8 @@ obstacles(:,:,5) = rec5;
 Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
-node = 250;
-nghb_cnt = 5;
+node = 400;
+nghb_cnt = 10;
 adj_step = 0.2; % 调整步长
 % figure;
 % hold on;
@@ -37,21 +37,26 @@ three_dof.dc = dc;
 %% Random Sampling
 
 t = cputime; % run time
-temp = [];
+sample_nodes = [];
 % get random nodes until total nodes is reach
-while length(temp)<node
+while length(sample_nodes)<node
     x = rand(1,dc).* [pi*2 pi*2 pi*2]; % random value
     
     % if okay random point, put into array (temp)
     if checkPoint(x,obstacles,three_dof) == false% 碰撞检测
-        temp = [temp;[x,0]];
+        if ~isempty(sample_nodes)
+            newNode = freeMove(obstacles,three_dof,sample_nodes,x(1:dc));% 在free space中的移动
+            sample_nodes = [sample_nodes;newNode];
+        else
+            sample_nodes = [sample_nodes;[x,0]];
+        end
     else
         % 使用伪距离生成新的节点
         adjustAttempts = 1;
         while adjustAttempts < 4
             newPoint = getNewPoint(x,adj_step);
             if checkPoint(newPoint,obstacles,three_dof) == false
-                temp = [temp;[newPoint,1]];
+                sample_nodes = [sample_nodes;[newPoint,1]];
                 break;
             end
             adjustAttempts = adjustAttempts+1;
@@ -59,26 +64,36 @@ while length(temp)<node
     end
 end
 
-%% create node paths (potential paths)
-
+%% Connection (potential paths)
+% general connection
+failure_rates = zeros(size(sample_nodes,1),1);
 adjacency = cell(node+2,1); % adjacency list
+n_free = length(find(~sample_nodes(:,4)));
+n_bor = node - n_free;
 for i=1:node
-    distances = distanceCost(temp(i,:),temp);
+    distances = distanceCost(sample_nodes(i,1:dc),sample_nodes(:,1:dc));
     [P,I] = sort(distances);
     k = min(numel(P),nghb_cnt+1);
-    nghb_nodes = temp(I(2:k),:);
+    nghb_nodes = sample_nodes(I(2:k),:);
+    n_failure = 0;
     for j=1:length(nghb_nodes)
-        [feasible,~,~] = checkPath(temp(i,:),nghb_nodes(j,:),obstacles,three_dof);
+        [feasible,~,~] = checkPath(sample_nodes(i,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
         if feasible
             adjacency{i} = [adjacency{i};I(j+1)];adjacency{I(j+1)}=[adjacency{I(j+1)};i];
 %             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
+        else
+            n_failure = n_failure+1;
         end
     end
+    failure_rates(i,:) = calFailureRates(sample_nodes(i,:),n_free,n_bor,n_failure);
 end
+% expansion connection
+
+% component connection
 
 e = cputime-t;
 fprintf("Construct Time: %.2f sec\n", e);
-save('roadmap.mat','adjacency','three_dof','obstacles','temp');
+save('roadmap.mat','adjacency','three_dof','obstacles','sample_nodes','e');
 
 %% 通过Q距离的微分得到新的点
 function newPoint = getNewPoint(point,cstep)

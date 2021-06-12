@@ -22,7 +22,7 @@ Q = [0,-1;
     sqrt(3)/2,1/2;
     -sqrt(3)/2,1/2];
 node = 400;
-nghb_cnt = 5;
+nghb_cnt = 10;
 adj_step = 0.2; % 调整步长
 % figure;
 % hold on;
@@ -44,29 +44,27 @@ while length(sample_nodes)<node
     
     % if okay random point, put into array (temp)
     if checkPoint(x,obstacles,three_dof) == false% 碰撞检测
-        sample_nodes = [sample_nodes;[x,0]];
-    else
-        % 使用伪距离生成新的节点
-        adjustAttempts = 1;
-        while adjustAttempts < 4
-            newPoint = getNewPoint(x(1:dc),adj_step);
-            if checkPoint(newPoint(1:dc),obstacles,three_dof) == false
-                sample_nodes = [sample_nodes;[newPoint,1]];
-                break;
-            end
-            adjustAttempts = adjustAttempts+1;
+        if ~isempty(sample_nodes)
+            newNode = freeMove(obstacles,three_dof,sample_nodes,x(1:dc));% 在free space中的移动
+            sample_nodes = [sample_nodes;newNode];
+        else
+            sample_nodes = [sample_nodes;[x,0]];
         end
+    else
+        sample_nodes = [sample_nodes;[newPoint,-1]];
     end
 end
+obstacleMove(obstacles,three_dof,sample_nodes);
 
-%% create node paths (potential paths)
-
+%% Connection (potential paths)
+% general connection
 adjacency = cell(node+2,1); % adjacency list
 for i=1:node
     distances = distanceCost(sample_nodes(i,1:dc),sample_nodes(:,1:dc));
     [P,I] = sort(distances);
     k = min(numel(P),nghb_cnt+1);
     nghb_nodes = sample_nodes(I(2:k),:);
+    n_failure = 0;
     for j=1:length(nghb_nodes)
         [feasible,~,~] = checkPath(sample_nodes(i,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
         if feasible
@@ -75,6 +73,9 @@ for i=1:node
         end
     end
 end
+% expansion connection
+
+% component connection
 
 e = cputime-t;
 fprintf("Construct Time: %.2f sec\n", e);
@@ -97,6 +98,7 @@ end
 dd = dd(:)';
 newPoint = point+cstep*dd/norm(dd);
 end
+
 
 %% forward kinematics of manipulator
 function [x] = fk(theta)

@@ -1,22 +1,24 @@
 %% Determine the best path
 clear;clc;
 load('roadmap.mat');
+fprintf("Construct Time: %.2f sec\n", e);
 
 %% 待查询节点
 start = [45 0 300]*pi/180;
 target = [200 130 110]*pi/180; % 把target放到最尾部
-temp = [temp;start;target];
-nghb_cnt = 10;
+sample_nodes = [sample_nodes;[start -1];[target -1]];
+nghb_cnt = 20;
+dc = three_dof.dc;
 for i = -1:0
-    distances = distanceCost(temp(end+i,:),temp);
+    distances = distanceCost(sample_nodes(end+i,1:dc),sample_nodes(:,1:dc));
     [P,I] = sort(distances);
     k = min(numel(P),nghb_cnt+1);
-    nghb_nodes = temp(I(2:k),:);
+    nghb_nodes = sample_nodes(I(2:k),:);
     for j=1:length(nghb_nodes)
-        [feasible,~,~] = checkPath(temp(end+i,:),nghb_nodes(j,:),obstacles,three_dof);
+        [feasible,~,~] = checkPath(sample_nodes(end+i,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
         if feasible
             adjacency{end+i} = [adjacency{end+i};I(j+1)];
-            adjacency{I(j+1)}=[adjacency{I(j+1)};size(temp,1)+i];
+            adjacency{I(j+1)}=[adjacency{I(j+1)};size(sample_nodes,1)+i];
 %             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
             %pause(0.01);
         end
@@ -27,9 +29,9 @@ end
 figure;
 grid on;
 hold on;
-p1 = plot3(temp(end-1,1), temp(end-1,2),temp(end-1,3),'kh','MarkerFaceColor','g'); %start
-p2 = plot3(temp(end,1), temp(end,2),temp(end,3),'mh','MarkerFaceColor','m'); %target
-p3 = plot3(temp(1:end-2,1),temp(1:end-2,2),temp(1:end-2,3),'b.');
+p1 = plot3(sample_nodes(end-1,1), sample_nodes(end-1,2),sample_nodes(end-1,3),'kh','MarkerFaceColor','g'); %start
+p2 = plot3(sample_nodes(end,1), sample_nodes(end,2),sample_nodes(end,3),'mh','MarkerFaceColor','m'); %target
+p3 = plot3(sample_nodes(1:end-2,1),sample_nodes(1:end-2,2),sample_nodes(1:end-2,3),'b.');
 for i = 1:length(adjacency)
     for j = 1:length(adjacency{i})
         %p4 = plot3([temp(i,1);temp(adjacency{i}(j),1)],[temp(i,2);temp(adjacency{i}(j),2)],[temp(i,3);temp(adjacency{i}(j),3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
@@ -40,7 +42,7 @@ title("Roadmap");
 
 t = cputime;
 % node = [idx, historic cost, heuristic cost, total cost, parent idx]
-X = [size(temp,1)-1 0 heu(temp(end-2,:),target) 0+heu(temp(end-2,:),target) -1]; % the process through A* algorihtm
+X = [size(sample_nodes,1)-1 0 heu(sample_nodes(end-2,:),target) 0+heu(sample_nodes(end-2,:),target) -1]; % the process through A* algorihtm
 p_index = []; % parent index
 path_F = false; % path found
 
@@ -53,7 +55,7 @@ while size(X,1)>0
     n = X(I(4),:); % check smallest cost element
     X = [X(1:I(4)-1,:);X(I(4)+1:end,:)]; % delete element (currently)
     
-    if n(1)==size(temp,1) % check
+    if n(1)==size(sample_nodes,1) % check
         path_F = true;
         break;
     end
@@ -64,8 +66,8 @@ while size(X,1)>0
         
         % if not already in p_index
         if length(p_index)==0 || length(find(p_index(:,1)==temp1))==0
-            historic_c = n(2)+hist(temp(n(1),:),temp(temp1,:)); % historic cost
-            heuristic_c = heu(temp(temp1,:),target); % heuristic cost
+            historic_c = n(2)+hist(sample_nodes(n(1),:),sample_nodes(temp1,:)); % historic cost
+            heuristic_c = heu(sample_nodes(temp1,:),target); % heuristic cost
             total_c = historic_c+heuristic_c; % total cost
             
             add = true; % add if better cost
@@ -92,10 +94,10 @@ if ~path_F
 end
 
 %retrieve path from parent index
-path = temp(n(1),:);
+path = sample_nodes(n(1),:);
 prev = n(5);
 while prev>0
-    path = [temp(p_index(prev,1),:);path];
+    path = [sample_nodes(p_index(prev,1),:);path];
     prev = p_index(prev,5);
 end
 

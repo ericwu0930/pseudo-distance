@@ -5,8 +5,9 @@ l = three_dof.l;
 plotEnv(obstacles);
 plot(a0(1),a0(2),'k^');
 [r,~] = size(theta);
+dc = three_dof.dc;
 for i = 1:r
-    x=fk(theta(i,:),a0,l);
+    x=fk(theta(i,1:dc),a0,l);
     for j = 1:size(x,1)-1
         handle(i)=plot(x(j:j+1,1),x(j:j+1,2),'r-');
     end

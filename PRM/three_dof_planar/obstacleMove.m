@@ -1,13 +1,18 @@
-function newNode = freeMove(obstacles,robot,cur_nodes,point)
-k2 = 2;
-r2 = 0.5;
-H2 = 1;
-moveStep = r2/2;
+function newNode = obstacleMove(obstacles,robot,cur_nodes)
+r1 = 1;
+H1 = 1;
+moveStep = r1/2;
 dc = robot.dc;
-freePointsIdx = find(~cur_nodes(:,dc+1));
-freePoints = cur_nodes(freePointsIdx,1:dc); % points in free space
-k = 0;
+obstaclelogi = cur_nodes(:,end)== -1;
+idx = find(obstaclelogi);
+obstaclePoints = cur_nodes(obstaclelogi,1:dc); % points in free space
 newNode = [];
+
+for i = 1:length(idx)
+    distances = distanceCost(obstaclePoints(i,1:dc),obstaclePoints(:,1:dc));
+    [P,I] = sort(distances);
+    F = [];
+end
 
 while k<k2
     distances = distanceCost(point(1:dc),freePoints(:,1:dc));
