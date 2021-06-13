@@ -1,5 +1,4 @@
 % Probabilistic Roadmap Method (PRM)
-
 % clear
 clc;
 clear;
@@ -66,9 +65,11 @@ end
 
 %% Connection (potential paths)
 % general connection
-failure_rates = zeros(size(sample_nodes,1),1);
-adjacency = cell(node+2,1); % adjacency list
-n_free = length(find(~sample_nodes(:,4)));
+n_failures = zeros(size(sample_nodes,1),1);
+adjacency = cell(node,1); % adjacency list
+free_idx = find(~sample_nodes(:,4));
+bor_idx = find(sample_nodes(:,4));
+n_free = length(free_idx);
 n_bor = node - n_free;
 for i=1:node
     distances = distanceCost(sample_nodes(i,1:dc),sample_nodes(:,1:dc));
@@ -79,17 +80,53 @@ for i=1:node
     for j=1:length(nghb_nodes)
         [feasible,~,~] = checkPath(sample_nodes(i,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
         if feasible
-            adjacency{i} = [adjacency{i};I(j+1)];adjacency{I(j+1)}=[adjacency{I(j+1)};i];
-%             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
+            adjacency{i} = [adjacency{i};I(j+1)];
+            adjacency{I(j+1)}=[adjacency{I(j+1)};i];
+            % p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
         else
             n_failure = n_failure+1;
         end
     end
-    failure_rates(i,:) = calFailureRates(sample_nodes(i,:),n_free,n_bor,n_failure);
+    n_failures(i) = n_failure;
 end
-% expansion connection
+failure_rates = zeros(size(sample_nodes,1),1);
+for i = 1:node
+    if sample_nodes(end) == 0
+        failure_rates(i) = n_failures(i)/sum(n_failure(free_idx))*n_free/(n_bor+n_free);
+    else
+        failure_rates(i) = n_failures(i)/sum(n_failure(bor_idx))*n_bor/(n_bor+n_free);
+    end
+end
 
-% component connection
+% expansion connection
+extend_r = 1;
+sigma = extend_r^2/chi2inv(0.95,dc)*eye(dc);
+extend_cnt = 10;
+for i = 1:node
+    if rand < falure_rates(i)
+        mu = sample_nodes(i,1:dc);
+        for j = 1:extend_cnt
+            newPoint = normrnd(mu,sigma);
+            newPoint = mod(newPoint+2*pi,2*pi);
+            if checkPoint(newPoint,obstacles,three_dof)
+                continue;
+            end
+            sample_nodes = [sample_nodes;[newPoint,1]];
+            adjacency{end+1} = [];
+            distances = distanceCost(sample_nodes(end,1:dc),sample_nodes(:,1:dc));
+            [P,I] = sort(distances);
+            k = min(numel(P),nghb_cnt+1);
+            nghb_nodes = sample_nodes(I(2:k),:);
+            for j=1:length(nghb_nodes)
+                [feasible,~,~] = checkPath(sample_nodes(end,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
+                if feasible
+                    adjacency{end} = [adjacency{end};I(j+1)];
+                    adjacency{I(j+1)}=[adjacency{I(j+1)};size(sample_nodes,2)];
+                end
+            end
+        end
+    end
+end
 
 e = cputime-t;
 fprintf("Construct Time: %.2f sec\n", e);
