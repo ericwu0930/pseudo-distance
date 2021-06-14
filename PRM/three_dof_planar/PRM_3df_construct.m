@@ -32,28 +32,28 @@ three_dof.dc = dc;
 %% Random Sampling
 
 t = cputime; % run time
-temp = [];
+sample_nodes = [];
 % get random nodes until total nodes is reach
-while length(temp)<node
+while length(sample_nodes)<node
     x = rand(1,dc).* [pi*2 pi*2 pi*2]; % random value
     
     % if okay random point, put into array (temp)
     if checkPoint(x,obstacles,three_dof) == false% 碰撞检测
-        temp = [temp;x];
+        sample_nodes = [sample_nodes;x];
 %         p3 = plot3(x(1),x(2),x(3),'b.'); % plot nodes
     end
 end
 
 %% create node paths (potential paths)
 
-adjacency = cell(node+2,1); % adjacency list
+adjacency = cell(node,1); % adjacency list
 for i=1:node
-    distances = distanceCost(temp(i,:),temp);
+    distances = distanceCost(sample_nodes(i,:),sample_nodes);
     [P,I] = sort(distances);
     k = min(numel(P),nghb_cnt+1);
-    nghb_nodes = temp(I(2:k),:);
+    nghb_nodes = sample_nodes(I(2:k),:);
     for j=1:length(nghb_nodes)
-        [feasible,~,~] = checkPath(temp(i,:),nghb_nodes(j,:),obstacles,three_dof);
+        [feasible,~,~] = checkPath(sample_nodes(i,:),nghb_nodes(j,:),obstacles,three_dof);
         if feasible
             adjacency{i} = [adjacency{i};I(j+1)];adjacency{I(j+1)}=[adjacency{I(j+1)};i];
 %             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
@@ -64,5 +64,5 @@ end
 
 e = cputime-t;
 fprintf("Construct Time: %.2f sec\n", e);
-save('roadmap.mat','adjacency','three_dof','obstacles','temp');
+save('roadmap.mat','adjacency','three_dof','obstacles','sample_nodes','e');
 

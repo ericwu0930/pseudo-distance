@@ -6,6 +6,8 @@ close all;
 
 %% Environments
 global Q;
+global obstacles;
+global l;
 rec1 = [8.8 0;10.4 0;10.4 8.8;8.8 8.8];
 % rec2 = [9 12;10 12;10 20;9 20];
 rec2 = [9 9.5;10 9.5;10 18;9 18];
@@ -53,7 +55,7 @@ while length(sample_nodes)<node
         % 使用伪距离生成新的节点
         adjustAttempts = 1;
         while adjustAttempts < 4
-            newPoint = getNewPoint(x,adj_step);
+            newPoint = getNewPoint(x,adj_step,three_dof);
             if checkPoint(newPoint,obstacles,three_dof) == false
                 sample_nodes = [sample_nodes;[newPoint,1]];
                 break;
@@ -92,9 +94,9 @@ end
 failure_rates = zeros(size(sample_nodes,1),1);
 for i = 1:node
     if sample_nodes(end) == 0
-        failure_rates(i) = n_failures(i)/sum(n_failure(free_idx))*n_free/(n_bor+n_free);
+        failure_rates(i) = n_failures(i)/sum(n_failures(free_idx))*n_free/(n_bor+n_free);
     else
-        failure_rates(i) = n_failures(i)/sum(n_failure(bor_idx))*n_bor/(n_bor+n_free);
+        failure_rates(i) = n_failures(i)/sum(n_failures(bor_idx))*n_bor/(n_bor+n_free);
     end
 end
 
@@ -103,10 +105,10 @@ extend_r = 1;
 sigma = extend_r^2/chi2inv(0.95,dc)*eye(dc);
 extend_cnt = 10;
 for i = 1:node
-    if rand < falure_rates(i)
+    if rand < failure_rates(i)
         mu = sample_nodes(i,1:dc);
         for j = 1:extend_cnt
-            newPoint = normrnd(mu,sigma);
+            newPoint = mvnrnd(mu,sigma);
             newPoint = mod(newPoint+2*pi,2*pi);
             if checkPoint(newPoint,obstacles,three_dof)
                 continue;
@@ -133,10 +135,10 @@ fprintf("Construct Time: %.2f sec\n", e);
 save('roadmap.mat','adjacency','three_dof','obstacles','sample_nodes','e');
 
 %% 通过Q距离的微分得到新的点
-function newPoint = getNewPoint(point,cstep)
+function newPoint = getNewPoint(point,cstep,robot)
 global obstacles;
 global Q;
-x = fk(point);
+x = fk(point,robot);
 dd = 0;
 for i = 1:size(x,1)-1
     for j = 1:size(obstacles,3)
@@ -150,23 +152,6 @@ dd = dd(:)';
 newPoint = point+cstep*dd/norm(dd);
 end
 
-
-%% forward kinematics of manipulator
-function [x] = fk(theta)
-% theta  1xdc configuration space of manipulator deg
-% a0     position of manipulator's base
-% l      the length of manipulator
-% x      N x 2 or 3
-global l;
-global a0;
-global dc;
-% 2-d environment
-x = zeros(dc+1,2);
-x(1,:) = a0(:)';
-for i = 2:dc+1
-    x(i,:) = x(i-1,:)+[l*cos(theta(i-1)) l*sin(theta(i-1))];
-end
-end
 
 function dd = gradN(VA,VB,VQ,xstar,theta,j,qe)
 global l;

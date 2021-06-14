@@ -1,12 +1,13 @@
 %% Determine the best path
 clear;clc;
 load('roadmap.mat');
-fprintf("Construct Time: %.2f sec\n", e);
+% fprintf("Construct Time: %.2f sec\n", e);
 
 %% 待查询节点
 start = [45 0 300]*pi/180;
 target = [200 130 110]*pi/180; % 把target放到最尾部
-sample_nodes = [sample_nodes;[start -1];[target -1]];
+sample_nodes = [sample_nodes;start -1];[target -1]];
+adjacency{end+2} = [];
 nghb_cnt = 20;
 dc = three_dof.dc;
 for i = -1:0
