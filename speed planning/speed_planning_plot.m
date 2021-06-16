@@ -131,7 +131,7 @@ plot3(pos_d(1,:),pos_d(2,:),pos_d(3,:),'ro');
 grid on;
 axis equal;
 hold on;
-plot3(pos(1,:),pos(2,:),pos(3,:),'b*');
+plot3(pos(1,:),pos(2,:),pos(3,:),'b-');
 legend('desire position','actual position');
 xlabel('x');
 ylabel('y');
@@ -166,9 +166,9 @@ xlabel("t");
 % 总速度
 figure
 plot(tt,end_v,'k--','LineWidth',2);
-xlabel("时间t/s",'FontSize',25);
-ylabel("速度V/rad \cdot s^{-1}",'FontSize',25);
-title("曲线速度-时间曲线",'FontSize',25);
+xlabel("time/s",'FontSize',15);
+ylabel("velocity/m \cdot s^{-1}",'FontSize',15);
+title("End-effector speed curve",'FontSize',20);
 
 % 六关节加速度
 figure

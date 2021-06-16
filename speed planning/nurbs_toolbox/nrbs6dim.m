@@ -1,4 +1,4 @@
-function nurbs = nrbs6d(coefs,knots)
+function nurbs = nrbs6dim(coefs,knots)
 %
 % Function Name:
 

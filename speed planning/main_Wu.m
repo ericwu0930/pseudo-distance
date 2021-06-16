@@ -1,33 +1,6 @@
 %% 构造B样条曲线
-clear;clc;
-load('path.mat');
-dd = path(2:end,:)-path(1:end-1,:);
-d = 0;
-n = size(path,1)-1;
-p = 5;
-m = n+p+1;
-dim = 6;
-for i = 1:size(dd,1)
-    d = d+norm(dd(i,:));
-end
-% 给每个数据点分配一个参数
-u_ = ones(1,size(path,1));
-u_(1)=0;
-u_(end) = 1;
-for i = 2:length(u_-1)
-    u_(i) = u_(i-1)+norm(path(i,:)-path(i-1,:))/d;
-end
-% construct knot vector
-u = zeros(1,m+1);
-u(m-p+1:end) = 1;
-for i = p+2:m-p
-    u(i) = 1/p * sum(u_(i-p:i-1));
-end
-path = path';
-nrbs = nrbs6d(path,u);
-% nrbs_1 =  nrbmak(path(1:3,:),u);
-% nrbs_2 = nrbmak(path(4:end,:),u);
-
+nrbs3d;
+% nrbs5d;
 %% initial
 tic;
 vmax=0.5;%设置最大速度
@@ -76,6 +49,61 @@ g3=my_nrbeval(nrbs3,ii);
 % 规划du/dt
 %ro=((sum(g1.^2)).^(3/2))./sqrt(sum((cross(g1,g2)).^2));
 
+% u=(vmax)^2./sum(g1.^2);%u的约束
+% %uu=(8*ro*eps/Ts/Ts)./sum(g1.^2);%弓高误差
+% %u=min(u,uu);
+% %clear uu;
+% u(1)=0;
+% u(n)=0;
+% 
+% %引入变量
+% yita=sign(g1.*g2)*0.5+0.5;
+% k1=-g1+(1-yita).*g2*2*h;
+% k2=g1+g2.*yita*2*h;
+% kb=-k1./k2;
+% kf=1./kb;
+% bb=abs((alpha*2*h)./k2);
+% bf=abs((alpha*2*h)./k1);
+% %前向扫描
+% x=ones(100,1);
+% for i=1:n-1
+%     x(1)=u(i);
+%     y=-inf;
+%     z=inf;
+%     j=1;
+%     while z-y>0.00001
+%         [y,kba]=min(kb(:,i)*x(j)+bb(:,i)); % 求算B
+%         if u(i+1)<y
+%             y=u(i+1);
+%             kba=4; % flag
+%         end
+%         [z,jba]=max((x(j)-bf(:,i))./kf(:,i)); % 求算F^{-1}
+%         if kba<4
+%             x(j+1)=(kf(jba,i)*bb(kba,i)+bf(jba,i))/(1-kf(jba,i)*kb(kba,i));
+%         else
+%             x(j+1)=kf(jba,i)*u(i+1)+bf(jba,i);
+%         end
+%         if x(j+1)<x(j) % 严格递减
+%         else
+%             x(j+1)=x(j);
+%         end
+%         j=j+1;
+%     end
+%     u(i)=x(j);
+%     u(i+1)=y;
+% end
+% %反向扫描
+% i=n-1;
+% while i>0
+%     if min(kf(:,i)*u(i+1)+bf(:,i))<u(i)
+%         u(i)=min(kf(:,i)*u(i+1)+bf(:,i));
+%     end
+%     i=i-1;
+% end
+% su=sqrt(u);%du/dt
+% u1=u;
+% t2=toc
+
 u=(vmax)^2./sum(g1.^2);%u的约束
 %uu=(8*ro*eps/Ts/Ts)./sum(g1.^2);%弓高误差
 %u=min(u,uu);
@@ -83,51 +111,28 @@ u=(vmax)^2./sum(g1.^2);%u的约束
 u(1)=0;
 u(n)=0;
 
-%引入变量
-yita=sign(g1.*g2)*0.5+0.5;
-k1=-g1+(1-yita).*g2*2*h;
-k2=g1+g2.*yita*2*h;
-kb=-k1./k2;
-kf=1./kb;
-bb=abs((alpha*2*h)./k2);
-bf=abs((alpha*2*h)./k1);
-%前向扫描
-x=ones(100,1);
-for i=1:n-1
-    x(1)=u(i);
-    y=-inf;
-    z=inf;
-    j=1;
-    while z-y>0.00001
-        [y,kba]=min(kb(:,i)*x(j)+bb(:,i)); % 求算B
-        if u(i+1)<y
-            y=u(i+1);
-            kba=4; % flag
-        end
-        [z,jba]=max((x(j)-bf(:,i))./kf(:,i)); % 求算F^{-1}
-        if kba<4
-            x(j+1)=(kf(jba,i)*bb(kba,i)+bf(jba,i))/(1-kf(jba,i)*kb(kba,i));
-        else
-            x(j+1)=kf(jba,i)*u(i+1)+bf(jba,i);
-        end
-        if x(j+1)<x(j) % 严格递减
-        else
-            x(j+1)=x(j);
-        end
-        j=j+1;
-    end
-    u(i)=x(j);
-    u(i+1)=y;
+f = -ones(1,n);
+lb = zeros(1,n);
+ub = u';
+Aeq = [1,zeros(1,n-1);zeros(1,n-1),1];
+beq = [0;0];
+b = alpha*ones(2*dim*(n-2),1);
+% 根据加速度约束构造A矩阵
+A = zeros((n-2)*2*dim,n);
+for i = 1:n-2
+    v1 = -g1(:,i+1)/4/h; % du/dt_{i-1}的系数
+    v2 = g2(:,i+1);      % du/dt_{i}的系数   
+    v3 = -v1;            % du/dt_{i+1}的系数
+    tmp = [v1,v2,v3;
+        -v1,-v2,-v3];
+    tmp = [zeros(2*dim,i-1),tmp];
+    tmp = [tmp,zeros(2*dim,n-size(tmp,2))];
+    A(2*dim*i-2*dim+1:2*dim*i,:) = tmp;
 end
-%反向扫描
-i=n-1;
-while i>0
-    if min(kf(:,i)*u(i+1)+bf(:,i))<u(i)
-        u(i)=min(kf(:,i)*u(i+1)+bf(:,i));
-    end
-    i=i-1;
-end
-su=sqrt(u);%du/dt
+u = linprog(f,A,b,Aeq,beq,lb,ub);
+u = u';
+
+su=sqrt(u);%sqrt of u
 u1=u;
 t2=toc
 
@@ -266,7 +271,7 @@ t=0;
 for i=1:n-1
     t=t+1/(su(i)+su(i+1));
 end
-t=2*h*t;%总运动时间 ？没看懂
+t=2*h*t;
 
 tn=ceil(t/Ts);
 ut=zeros(1,tn);%插补得到的参数点

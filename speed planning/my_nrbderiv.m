@@ -3,7 +3,7 @@ function dnurbs = my_nrbderiv(nurbs)
 %   �˴���ʾ��ϸ˵��
 
   [dcoefs,dknots] = bspderiv(nurbs.order - 1,nurbs.coefs,nurbs.knots); 
-  dnurbs = nrbs6d(dcoefs, dknots); 
+  dnurbs = nrbs6dim(dcoefs, dknots); 
  
 end
 

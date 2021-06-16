@@ -7,7 +7,10 @@ dc = robot.dc;
 freePointsIdx = find(~cur_nodes(:,dc+1));
 freePoints = cur_nodes(freePointsIdx,1:dc); % points in free space
 k = 0;
-newNode = [];
+newNode = [point,0];
+if isempty(freePoints)
+    return
+end
 
 while k<k2
     distances = distanceCost(point(1:dc),freePoints(:,1:dc));

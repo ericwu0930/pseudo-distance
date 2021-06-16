@@ -6,7 +6,11 @@ load('roadmap.mat');
 %% 待查询节点
 start = [45 0 300]*pi/180;
 target = [200 130 110]*pi/180; % 把target放到最尾部
-sample_nodes = [sample_nodes;start -1];[target -1]];
+if size(sample_nodes,2) == size(start,2)
+    sample_nodes = [sample_nodes;start;target];
+else
+    sample_nodes = [sample_nodes;[start,0];[target,0]];
+end
 adjacency{end+2} = [];
 nghb_cnt = 20;
 dc = three_dof.dc;
@@ -20,7 +24,7 @@ for i = -1:0
         if feasible
             adjacency{end+i} = [adjacency{end+i};I(j+1)];
             adjacency{I(j+1)}=[adjacency{I(j+1)};size(sample_nodes,1)+i];
-%             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
+            %             p4 = plot3([temp(i,1);nghb_nodes(j,1)],[temp(i,2);nghb_nodes(j,2)],[temp(i,3);nghb_nodes(j,3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
             %pause(0.01);
         end
     end
@@ -36,7 +40,7 @@ p3 = plot3(sample_nodes(1:end-2,1),sample_nodes(1:end-2,2),sample_nodes(1:end-2,
 for i = 1:length(adjacency)
     for j = 1:length(adjacency{i})
         %p4 = plot3([temp(i,1);temp(adjacency{i}(j),1)],[temp(i,2);temp(adjacency{i}(j),2)],[temp(i,3);temp(adjacency{i}(j),3)], 'r-', 'LineWidth', 0.1); % plot potentials lines
-%         pause(0.01);
+        %         pause(0.01);
     end
 end
 title("Roadmap");
@@ -46,6 +50,37 @@ t = cputime;
 X = [size(sample_nodes,1)-1 0 heu(sample_nodes(end-2,:),target) 0+heu(sample_nodes(end-2,:),target) -1]; % the process through A* algorihtm
 p_index = []; % parent index
 path_F = false; % path found
+
+
+if isempty(adjacency{end-1})
+    extend_r = 1;
+    sigma = extend_r^2/chi2inv(0.95,dc)*eye(dc);
+    extend_cnt = 10;
+    mu = start(1:dc);
+    for j = 1:extend_cnt
+        newPoint = mvnrnd(mu,sigma);
+        newPoint = mod(newPoint+2*pi,2*pi);
+        if checkPoint(newPoint,obstacles,three_dof)
+            continue;
+        end
+        sample_nodes = [sample_nodes(end-2,:);[newPoint,1];sample_nodes(end-1:end,:)];
+        adjacency = [adjacency(1:end-2);cell(1,1);adjacency(end-1:end)];
+        distances = distanceCost(sample_nodes(end-2,1:dc),sample_nodes(:,1:dc));
+        [P,I] = sort(distances);
+        nghb_cnt = min(numel(P),nghb_cnt+1);
+        nghb_nodes = sample_nodes(I(2:nghb_cnt),:);
+        for k=1:length(nghb_nodes)
+            [feasible,~,~] = checkPath(sample_nodes(end-2,1:dc),nghb_nodes(k,1:dc),obstacles,three_dof);
+            if feasible
+                adjacency{end-2} = [adjacency{end-2};I(k+1)];
+                adjacency{I(k+1)}=[adjacency{I(k+1)};size(sample_nodes,2)-2];
+            end
+        end
+    end
+end
+
+if isempty(adjacency{end})
+end
 
 if isempty(adjacency{end-1}) || isempty(adjacency{end})
     error('No Path!')

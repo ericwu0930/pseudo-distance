@@ -46,7 +46,7 @@ while length(sample_nodes)<node
     % if okay random point, put into array (temp)
     if checkPoint(x,obstacles,three_dof) == false% 碰撞检测
         if ~isempty(sample_nodes)
-            newNode = freeMove(obstacles,three_dof,sample_nodes,x(1:dc));% 在free space中的移动
+            newNode = freeMove(obstacles,three_dof,sample_nodes,x(1:dc));
             sample_nodes = [sample_nodes;newNode];
         else
             sample_nodes = [sample_nodes;[x,0]];
@@ -54,8 +54,11 @@ while length(sample_nodes)<node
     else
         % 使用伪距离生成新的节点
         adjustAttempts = 1;
+        dir = getNewDir(x,three_dof);
+        newPoint = x;
         while adjustAttempts < 4
-            newPoint = getNewPoint(x,adj_step,three_dof);
+            newPoint = newPoint+adj_step*dir;
+            newPoint = mod(newPoint+2*pi,2*pi);
             if checkPoint(newPoint,obstacles,three_dof) == false
                 sample_nodes = [sample_nodes;[newPoint,1]];
                 break;
@@ -93,7 +96,7 @@ for i=1:node
 end
 failure_rates = zeros(size(sample_nodes,1),1);
 for i = 1:node
-    if sample_nodes(end) == 0
+    if sample_nodes(i,end) == 0
         failure_rates(i) = n_failures(i)/sum(n_failures(free_idx))*n_free/(n_bor+n_free);
     else
         failure_rates(i) = n_failures(i)/sum(n_failures(bor_idx))*n_bor/(n_bor+n_free);
@@ -113,17 +116,18 @@ for i = 1:node
             if checkPoint(newPoint,obstacles,three_dof)
                 continue;
             end
+            addNodes = addNodes+1; 
             sample_nodes = [sample_nodes;[newPoint,1]];
             adjacency{end+1} = [];
             distances = distanceCost(sample_nodes(end,1:dc),sample_nodes(:,1:dc));
             [P,I] = sort(distances);
-            k = min(numel(P),nghb_cnt+1);
-            nghb_nodes = sample_nodes(I(2:k),:);
-            for j=1:length(nghb_nodes)
-                [feasible,~,~] = checkPath(sample_nodes(end,1:dc),nghb_nodes(j,1:dc),obstacles,three_dof);
+            nghb_cnt = min(numel(P),nghb_cnt+1);
+            nghb_nodes = sample_nodes(I(2:nghb_cnt),:);
+            for k=1:length(nghb_nodes)
+                [feasible,~,~] = checkPath(sample_nodes(end,1:dc),nghb_nodes(k,1:dc),obstacles,three_dof);
                 if feasible
-                    adjacency{end} = [adjacency{end};I(j+1)];
-                    adjacency{I(j+1)}=[adjacency{I(j+1)};size(sample_nodes,2)];
+                    adjacency{end} = [adjacency{end};I(k+1)];
+                    adjacency{I(k+1)}=[adjacency{I(k+1)};size(sample_nodes,2)];
                 end
             end
         end
@@ -135,7 +139,7 @@ fprintf("Construct Time: %.2f sec\n", e);
 save('roadmap.mat','adjacency','three_dof','obstacles','sample_nodes','e');
 
 %% 通过Q距离的微分得到新的点
-function newPoint = getNewPoint(point,cstep,robot)
+function dir = getNewDir(point,robot)
 global obstacles;
 global Q;
 x = fk(point,robot);
@@ -148,7 +152,11 @@ for i = 1:size(x,1)-1
         end
     end
 end
-dd = dd(:)';
+dir = dd(:)';
+end
+
+function newPoint = getNewPoint(point,cstep,robot)
+dd = getNewDir(point,robot);
 newPoint = point+cstep*dd/norm(dd);
 end
 
