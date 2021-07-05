@@ -40,10 +40,11 @@ i = 1;
 state = 0;
 while (greedy || i<=10) && state~=-1 && state~=1
     [v,w,pd_proj] = compute_valid_velocity(p,pd);
-    [state,p_next]=compute_next_pose(p,v,w,pd_proj);
+    [state,p_next] = compute_next_pose(p,v,w,pd_proj);
     if ~check_path(p,p_next)
         pPath = [pPath;p_next];
         p = p_next;
+        i = i+1;
     else
         state = -1;
     end
@@ -107,6 +108,33 @@ function [cPath] = track_end_effector_path(q,pPath)
 [~,~,cPath] = rrt_like(q,pPath);
 end
 
+function q_new = closest_ik(q_old,p_new)
+q_new = q_old;
+MAX_ATTEMPT = 20;
+iter = 0;
+while iter<MAX_ATTEMPT
+    p_temp = to_end_pose(q_new);
+    dd = p_new-p_temp;
+   if dd<1e-2
+       return;
+   else
+       j = get_jacob(q_new);
+       j_inv = j'*inv(j*j');
+       dq = j_inv*dd;
+       q_new = q_new+dq;
+   end
+end
+end
+
+function j = get_jacob(q)
+global l;
+j = [-l*sin(q(1))-l*sin(q(1)+q(2))-l*sin(sum(q)),-l*sin(q(1)+q(2))-l*sin(sum(q)),-l*sin(sum(q));
+    l*cos(q(1))+l*cos(q(1)+q(2))+l*cos(sum(q)),l*cos(q(1)+q(2))+l*cos(sum(q)),l*cos(sum(q));
+    1,1,1];
+end
+
+
+
 function Nc = nearest_node(pd)
 % todo: how to measure se3 to se3? reference to Jin?
 global Tree;
@@ -128,6 +156,7 @@ state = extend_with_constraint(Nk,pg,true);
 end
 
 function p = to_end_pose(q,fkine)
+% input configuration and fkine function to get end-effector pose
 x = fkine(q);
 p  = x(end,:);
 p = [p,sum(q)];

@@ -125,7 +125,11 @@ for i = 1:r-1
 %         end
 %     end
     for j = i+2:r-1
-        isCols = gjk2d(x(i:i+1,:),x(j:j+1,:));
+        shape1.XData = x(i:i+1,1);
+        shape1.YData = x(i:i+1,2);
+        shape2.XData = x(j:j+1,1);
+        shape2.YData = x(j:j+1,2);
+        isCols = gjk2d(shape1,shape2,6);
         if isCols == 1
             return;
         end

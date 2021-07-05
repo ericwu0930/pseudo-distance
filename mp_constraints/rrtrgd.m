@@ -8,7 +8,7 @@ function [time,len,path] = rrtrgd()
             i=i+1;
             j=j+1;
             q_ = random_ngbr(q);
-            if constraintFunc(q_)<constraintFunc(q):
+            if constraintFunc(q_)<constraintFunc(q)
                 j=0;
                 q = q_;
             end
