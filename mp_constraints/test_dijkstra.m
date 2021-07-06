@@ -1,7 +1,7 @@
 % test dijkstra function
 clear all;
 tic;
-path = linspace(0,1,20);
+path = linspace(0,2,20);
 path = path';
 path = [path ones(20,1)*(2*sqrt(2)+2) ones(20,1)*pi/2];
 global a0;
