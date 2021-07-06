@@ -1,0 +1,273 @@
+%% ur10 motion planning with constraints
+clear;
+%% define UR10 and bounding box
+mdl_ur10;
+% Bounding box size
+bb1 = [0.16/2 -0.13 0.16/2;
+    0.16/2  -0.13 -0.16/2;
+    -0.16/2 -0.13 -0.16/2;
+    -0.16/2 -0.13 0.16/2;
+    0.16/2 0.05 0.16/2;
+    0.16/2 0.05 -0.16/2;
+    -0.16/2 0.05 -0.16/2;
+    -0.16/2 0.05 0.16/2];
+% bounding box face
+bf(:,:,1)=[1,2,6,5;3,4,8,7;1,2,3,4;5,6,7,8;1,4,8,5;2,3,7,6];
+% for i = 1:6
+% h = patch(bb1(bf1(i,:),1),bb1(bf1(i,:),2),bb1(bf1(i,:),3),'r')
+% set(h,'facealpha',0.2);
+% end
+bb2 = [-0.04 0.05 0.08+0.18;
+    -0.04 -0.13 0.08+0.18;
+    0.7 0.05 0.08+0.18;
+    0.7 -0.13 0.08+0.18;
+    -0.04 0.05 0.08;
+    -0.04 -0.13 0.08;
+    0.7 0.05 0.08;
+    0.7 -0.13 0.08];
+bf(:,:,2)=[1,2,4,3;5,6,8,7;1,3,7,5;2,4,8,6;1,2,6,5;3,4,8,7];
+% for i = 1:6
+% h = patch(bb2(bf2(i,:),1),bb2(bf2(i,:),2),bb2(bf2(i,:),3),'r')
+% set(h,'facealpha',0.2);
+% end
+
+bb3 = [-0.04 0.05 0.09;
+    -0.04 -0.13 0.09;
+    0.7 0.05 0.09;
+    0.7 -0.13 0.09;
+    -0.04 0.05 -0.08;
+    -0.04 -0.13 -0.08;
+    0.7 0.05 -0.08;
+    0.7 -0.13 -0.08];
+bf(:,:,3)=[1,2,6,5;3,4,8,7;1,3,7,5;2,4,8,6;1,2,4,3;5,6,8,7];
+% for i = 1:6
+% h = patch(bb3(bf3(i,:),1),bb3(bf3(i,:),2),bb3(bf3(i,:),3),'r')
+% set(h,'facealpha',0.2);
+% end
+
+bb4 = [0.05 0.05 -0.06;
+    0.05 0.05 0.18;
+    0.05 -0.05 -0.06;
+    0.05 -0.05 0.18;
+    -0.05 0.05 -0.06;
+    -0.05 0.05 0.18;
+    -0.05 -0.05 -0.06;
+    -0.05 -0.05 0.18];
+bf(:,:,4)=[1,2,4,3;5,6,8,7;1,2,6,5;3,4,8,7;1,3,7,5;2,4,8,6];
+% for i = 1:6
+% h = patch(bb4(bf4(i,:),1),bb4(bf4(i,:),2),bb4(bf4(i,:),3),'r')
+% set(h,'facealpha',0.2);
+% end
+
+bb(:,:,1) = bb1;
+bb(:,:,2) = bb2;
+bb(:,:,3) = bb3;
+bb(:,:,4) = bb4;
+
+%% define obstacles
+rec1 = [0.9750,0.075,1;
+    0.9750,0.075,0;
+    0.5250,0.075,1;
+    0.5250,0.075,0;
+    0.5250,-0.075,1;
+    0.5250,-0.075,0;
+    0.9750,-0.075,1;
+    0.9750,-0.075,0];
+% obstacles face
+of(:,:,1) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
+figure
+hold on
+axis equal
+grid on
+for i = 1:6
+    h = patch(rec1(of(i,:,1),1),rec1(of(i,:,1),2),rec1(of(i,:,1),3),'y')
+%     set(h,'facealpha',0.2);
+end
+rec2 = [0.7750,-0.5500,1;
+    0.7750,-0.5500,0;
+    0.6250,-0.5500,1;
+    0.6250,-0.5500,0;
+    0.6250,-1.1500,1;
+    0.6250,-1.1500,0;
+    0.7750,-1.1500,1;
+    0.7750,-1.1500,0];
+of(:,:,2) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
+for i = 1:6
+    h = patch(rec2(of(i,:,2),1),rec2(of(i,:,2),2),rec2(of(i,:,2),3),'y');
+%     set(h,'facealpha',0.2);
+end
+rec3 = [0.7750,0.5500,1;
+    0.7750,0.5500,0;
+    0.6250,0.5500,1;
+    0.6250,0.5500,0;
+    0.6250,1.1500,1;
+    0.6250,1.1500,0;
+    0.7750,1.1500,1;
+    0.7750,1.1500,0];
+of(:,:,3) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
+for i = 1:6
+    h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'y')
+%     set(h,'facealpha',0.2);
+end
+obstacles(:,:,1) = rec1;
+obstacles(:,:,2) = rec2;
+obstacles(:,:,3) = rec3;
+%% atace_plan
+global Tree;
+ps = to_end_pose(qs);
+Ns.p = ps;
+Ns.q = qs;
+Ns.parent = nan;
+Tree = [Ns];
+maxFailedAttempts = 10000;
+failedAttempts = 0
+pathFound = false;
+while failedAttempts<=maxFailedAttempts
+    qd = rand(1,n).*ones(1,n)*pi*2;
+    pd = to_end_pose(qd,for_kine);
+    Nc = nearest_node(pd);
+    [s,Nk] = extend_with_constraint(Nc,pd,false);
+    if s == -1 % trapped
+        state = connect_to_goal(Nk);
+        if state == 1
+            pathFound = true;
+            break;
+        end
+    end
+end
+%% display
+
+
+%% auxiliary funciton
+% state -1 trapped 0 advanced 1 reached
+function [state,Nk]=extend_with_constraint(Nc,pd,greedy)
+% choosing feasible velocities toward a direction pd at every step
+% along the path. When parameter greedy=FALSE, the sub-path is
+% extracted for no more than M steps.
+p = Nc.p;
+pPath = p;
+i = 1;
+state = 0;
+while (greedy || i<=10) && state~=-1 && state~=1
+    [v,w,pd_proj] = compute_valid_velocity(p,pd);
+    [state,p_next] = compute_next_pose(p,v,w,pd_proj);
+    if ~check_path(p,p_next)
+        pPath = [pPath;p_next];
+        p = p_next;
+        i = i+1;
+    else
+        state = -1;
+    end
+end
+if state~=-1
+    qc = Nc.q;
+    cPath = track_end_effector_path(qc,pPath);
+    if ~isempty(cPath)
+        Nk.p = pPath(end,:);
+        Nk.q = cPath(end,:);
+        Nk.pPath = pPath;
+        Nk.cPath = cPath;
+        Nk.parent = Nc;
+        Tree = [Tree;Nc];
+    else
+        state = -1;
+    end
+end
+end
+
+function [v,w,pd_proj] = compute_valid_velocity(p,pd)
+% transforms end-effector constraints into end-effector velocity
+% constraints
+%         [x,y,z] = p(1:3);
+%         [xd,yd,zd] = pd(1:3);
+%         n = eval(grad);
+%         a=n(1);
+%         b=n(2);
+%         c=n(3);
+%         A = [a b c;-b a 0;-c 0 a];
+%         b = [[a,b,c]*[x,y,z]';a*yd-b*xd;a*zd-c*xd];
+%         pdp = linsolve(A,b);
+%         v = (pdp-p(1:3))/(norm(pdp-p(1:3)));
+pd_proj(1) = pd(1);
+pd_proj(2) = pd(2);
+pd_proj(3) = pd(3);
+v = (pd_proj - p(1:3))/norm(pd_proj-p(1:3));
+w = 0;
+end
+
+function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
+state = 0;
+time_interval = 0.1;
+p_next = [p(1:2)+time_interval*v,p(3)];
+if distanceCost(p(1:2),pd_proj(1:2))<0.2
+    state = 1;
+end
+end
+
+function isCols = check_path(ps,pe)
+isCols = false;
+end
+
+function [cPath] = track_end_effector_path(q,pPath)
+cnt = size(pPath,1);
+cPath = ones(cnt,6);
+cPath(1,:) = q;
+for i = 2:cnt
+    cPath(i,:) = closest_ik(q,pPath(i,:));
+    q = cPath(i,:);
+end
+end
+
+function q_new = closest_ik(q_old,p_new)
+q_new = q_old;
+MAX_ATTEMPT = 20;
+iter = 0;
+while iter<MAX_ATTEMPT
+    p_temp = to_end_pose(q_new);
+    dd = p_new-p_temp;
+   if dd<1e-2
+       return;
+   else
+       j = get_jacob(q_new);
+       j_inv = j'*inv(j*j');
+       dq = j_inv*dd;
+       q_new = q_new+dq;
+   end
+end
+end
+
+function j = get_jacob(q)
+global ur10;
+j = ur10.jacob0(q,'rpy');
+end
+
+
+
+function Nc = nearest_node(pd)
+% just 
+global Tree;
+Nc = nan;
+min_value = inf;
+cnt = size(Tree);
+for i=1:cnt
+    curNode = Tree(i);
+    val = sqrt((sum(curNode.p(1:3)-pd(1:3))).^2);
+    if val<min_value
+        min_value = val;
+        Nc = curNode;
+    end
+end
+end
+
+function state = connect_to_goal(Nk)
+state = extend_with_constraint(Nk,pg,true);
+end
+
+function p = to_end_pose(q)
+global ur10;
+% input configuration and fkine function to get end-effector pose
+se3 = ur10.fkine(q);
+p = [se3.t;se3.torpy];
+end
+
+
