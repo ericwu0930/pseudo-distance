@@ -1,4 +1,6 @@
 % test dijkstra function
+clear all;
+tic;
 path = linspace(0,1,20);
 path = path';
 path = [path ones(20,1)*(2*sqrt(2)+2) ones(20,1)*pi/2];
@@ -9,9 +11,10 @@ l = 2;
 a0 = [0 0];
 n = 3; % cnt of joints is 3
 cPath = track_end_effector_path([pi/4,pi/2,-pi/4],path);
+toc;
 
 function [cPath] = track_end_effector_path(q,pPath)
-cnt = size(pPath,2);
+cnt = size(pPath,1);
 configures = [q];
 pre_idx = [1,1];
 adj = cell(1,1);
@@ -35,11 +38,11 @@ end
 for i = 1:new_idx(2)
     end_idx = [end_idx;new_idx(1)+i-1];
 end
-cPath = dijkstra(q,pPath,end_idx);
+cPath = dijkstra(configures,adj,end_idx);
 end
 
 function cPath = dijkstra(configures,adj,end_idx)
-X = [1,1,0]; % [idx,parent_idx,cost]
+X = [1,0,0]; % [idx,parent_idx,cost]
 p_idx = [];
 path_F = false;
 while size(X,1)>0
@@ -55,7 +58,7 @@ while size(X,1)>0
     for mv = 1:length(adj{n(1),1})
         temp1 = adj{n(1)}(mv);
         if length(p_idx)==0 || length(find(p_idx(:,1)==temp1))==0
-            cost = n(3)+ sqrt(sum((configures(n(1),:)-configures(temp1,:)).^2));
+            cost = n(3)+ distanceCost(configures(n(1),:),configures(temp1,:));
             
             add = true;
             if length(find(X(:,1)==temp1))>=1 % 如果该近邻还在待搜索列表中
@@ -68,16 +71,16 @@ while size(X,1)>0
                 end
             end
             if add 
-                X = [X;temp1,size(p_index,1)+1, cost];
+                X = [X;temp1,size(p_idx,1)+1, cost];
             end
         end
     end
     p_idx = [p_idx;n]; % update list
 end
-qPath = configures(n(1),:);
+cPath = configures(n(1),:);
 prev = n(2);
 while prev > 0
-    qPath = [configures(p_idx(prev,1),:);qPath];
+    cPath = [configures(p_idx(prev,1),:);cPath];
     prev = p_idx(prev,2);
 end
 end

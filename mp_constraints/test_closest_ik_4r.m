@@ -1,21 +1,23 @@
 % test closest_ik function
 clear all;
 tic
-path = linspace(0,1,20);
+point_cnt = 40;
+path = linspace(sqrt(2),4,point_cnt);
 path = path';
-path = [path ones(20,1)*(2*sqrt(2)+2) ones(20,1)*pi/2];
+path = [path ones(point_cnt,1)*(3*sqrt(2)+2) ones(point_cnt,1)*pi/2];
 global a0;
 global l;
 global n;
 l = 2;
 a0 = [0 0];
-n = 3; % cnt of joints is 3
-cPath = track_end_effector_path([pi/4,pi/2,-pi/4],path);
+n = 4; % cnt of joints is 3
+cPath = track_end_effector_path([pi/4,pi/2,-pi/2,pi/4],path);
 toc
 
 function [cPath] = track_end_effector_path(q,pPath)
+global n;
 cnt = size(pPath,1);
-cPath = ones(cnt,3);
+cPath = ones(cnt,n);
 cPath(1,:) = q;
 for i = 2:cnt
     cPath(i,:) = closest_ik(q,pPath(i,:));
@@ -30,7 +32,7 @@ iter = 0;
 while iter<MAX_ATTEMPT
     p_temp = to_end_pose(q_new);
     dd = p_new-p_temp;
-   if dd<1e-3
+   if dd<1e-2
        return;
    else
        j = get_jacob(q_new);
@@ -43,9 +45,9 @@ end
 
 function j = get_jacob(q)
 global l;
-j = [-l*sin(q(1))-l*sin(q(1)+q(2))-l*sin(sum(q)),-l*sin(q(1)+q(2))-l*sin(sum(q)),-l*sin(sum(q));
-    l*cos(q(1))+l*cos(q(1)+q(2))+l*cos(sum(q)),l*cos(q(1)+q(2))+l*cos(sum(q)),l*cos(sum(q));
-    1,1,1];
+j = [-l*sin(q(1))-l*sin(q(1)+q(2))-l*sin(q(1)+q(2)+q(3))-l*sin(sum(q)),-l*sin(q(1)+q(2))-l*sin(q(1)+q(2)+q(3))-l*sin(sum(q)),-l*sin(q(1)+q(2)+q(3))-l*sin(sum(q)),-l*sin(sum(q));
+    l*cos(q(1))+l*cos(q(1)+q(2))+l*cos(q(1)+q(2)+q(3))+l*cos(sum(q)),l*cos(q(1)+q(2))+l*cos(q(1)+q(2)+q(3))+l*cos(sum(q)),l*cos(q(1)+q(2)+q(3))+l*cos(sum(q)),l*cos(sum(q));
+    1,1,1,1];
 end
 
 function p = to_end_pose(q)
