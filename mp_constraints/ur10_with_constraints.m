@@ -1,5 +1,5 @@
 %% ur10 motion planning with constraints
-clear;
+clear all;
 %% define UR10 and bounding box
 mdl_ur10;
 % Bounding box size
@@ -93,7 +93,7 @@ rec2 = [0.7750,-0.5500,1;
     0.7750,-1.1500,0];
 of(:,:,2) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
 for i = 1:6
-    h = patch(rec2(of(i,:,2),1),rec2(of(i,:,2),2),rec2(of(i,:,2),3),'y');
+%     h = patch(rec2(of(i,:,2),1),rec2(of(i,:,2),2),rec2(of(i,:,2),3),'y');
 %     set(h,'facealpha',0.2);
 end
 rec3 = [0.7750,0.5500,1;
@@ -106,12 +106,15 @@ rec3 = [0.7750,0.5500,1;
     0.7750,1.1500,0];
 of(:,:,3) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
 for i = 1:6
-    h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'y')
+%     h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'y')
 %     set(h,'facealpha',0.2);
 end
 obstacles(:,:,1) = rec1;
-obstacles(:,:,2) = rec2;
-obstacles(:,:,3) = rec3;
+% obstacles(:,:,2) = rec2;
+% obstacles(:,:,3) = rec3;
+
+
+global dc;dc = 3;
 %% atace_plan
 global Tree;
 ps = to_end_pose(qs);
@@ -124,10 +127,10 @@ failedAttempts = 0
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
     qd = rand(1,n).*ones(1,n)*pi*2;
-    pd = to_end_pose(qd,for_kine);
+    pd = to_end_pose(qd);
     Nc = nearest_node(pd);
     [s,Nk] = extend_with_constraint(Nc,pd,false);
-    if s == -1 % trapped
+    if s ~= -1 % trapped
         state = connect_to_goal(Nk);
         if state == 1
             pathFound = true;
@@ -161,8 +164,8 @@ while (greedy || i<=10) && state~=-1 && state~=1
 end
 if state~=-1
     qc = Nc.q;
-    cPath = track_end_effector_path(qc,pPath);
-    if ~isempty(cPath)
+    [state,cPath] = track_end_effector_path(qc,pPath);
+    if ~isempty(cPath) && state == 1
         Nk.p = pPath(end,:);
         Nk.q = cPath(end,:);
         Nk.pPath = pPath;
@@ -199,24 +202,69 @@ function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
 state = 0;
 time_interval = 0.1;
 t = p(1:3)+time_interval*v;
-r = SO3.angvec(time_interval,w)
-p_next = [p(1:3)+time_interval*v,p(3)];
-if distanceCost(p(1:2),pd_proj(1:2))<0.2
-    state = 1;
-end
+r = SO3.angvec(time_interval,w);
+p_next = [p(1:3)+time_interval*v;r.torpy];
 end
 
 function isCols = check_path(ps,pe)
+global obstacles;
+diff_vec = pe(1:3)-ps(1:3);
+dir = diff_vec/norm(diff_vec);
+for i = 0:0.05:norm(diff_vec)
+    pn = ps(1:3)+i*dir;
+    obj1 = wrapObj(pn);
+    obj2 = wrapObj(obstacles(:,:,1));
+    isCols = GJK(obj1,obj2,6);
+    if isCols
+        return;
+    end
+end
 isCols = false;
 end
 
-function [cPath] = track_end_effector_path(q,pPath)
+function obj = wrapObj(vertices)
+obj.XData = vertices(:,1);
+obj.YData = vertices(:,2);
+obj.ZData = vertices(:,3);
+end
+
+function [state,cPath] = track_end_effector_path(q,pPath)
 cnt = size(pPath,1);
 cPath = ones(cnt,6);
 cPath(1,:) = q;
+state = 1;
 for i = 2:cnt
     cPath(i,:) = closest_ik(q,pPath(i,:));
+    [feasible,~,~]=checkPath(cPath(i-1,:),cPath(i,:));
+    if ~feasible
+        cPath = [];
+        state = -1;
+        return;
+    end
     q = cPath(i,:);
+end
+end
+
+function [feasible,colPoint,step] = checkPath(node,parent)
+% check path feasible between parent and node
+global dc;
+step = 0;
+p1 = parent(1:dc);
+p2 = node(1:dc);
+diffVec = getMinDistVec(p1,p2);
+colPoint = [];
+feasible = 1;
+if norm(diffVec)<1e-3
+    return;
+end
+dir = (diffVec)/norm(diffVec);
+for i=0:0.05:norm(diffVec)
+    feasible = ~det(p1+i*dir);
+    if feasible == 0
+        colPoint = p1+i*dir;
+        step = i;
+        return
+    end
 end
 end
 
@@ -237,6 +285,47 @@ while iter<MAX_ATTEMPT
    end
 end
 end
+
+function isCols = det(config)
+% config -- configuration
+global obstacles;
+global bb;
+global ur10;
+isCols = 0;
+% total 4 bounding boxes for ur10
+for i=1:4
+    % bounding box translation
+    bbt(:,:,i) = transBox(ur10.A(1:i,config),bb(:,:,i));
+end
+% collision detection
+% plot for test
+detPlot;
+pause(0.01)
+for i=1:4
+    [~,~,on] = size(obstacles);
+    % traverse jth obstacles for ith bounding box
+    for j = 1:on
+        obj1 = wrapObj(bbt(:,:,i));
+        obj2 = wrapObj(obstacles(:,:,j));
+        isCols = GJK(obj1,obj2,6);
+        if isCols == 1
+            delete(h)
+            return;
+        end
+    end
+    for j = i+2:4
+        obj1 = wrapObj(bbt(:,:,i));
+        obj2 = wrapObj(bbt(:,:,j));
+        isCols = GJK(obj1,obj2,6);
+        if isCols == 1
+            delete(h)
+            return;
+        end
+    end
+end
+delete(h)
+end
+
 
 function j = get_jacob(q)
 global ur10;
