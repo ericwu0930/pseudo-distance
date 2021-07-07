@@ -192,13 +192,15 @@ pd_proj(1) = pd(1);
 pd_proj(2) = pd(2);
 pd_proj(3) = pd(3);
 v = (pd_proj - p(1:3))/norm(pd_proj-p(1:3));
-w = 0;
+w = [0;0;1];
 end
 
 function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
 state = 0;
 time_interval = 0.1;
-p_next = [p(1:2)+time_interval*v,p(3)];
+t = p(1:3)+time_interval*v;
+r = SO3.angvec(time_interval,w)
+p_next = [p(1:3)+time_interval*v,p(3)];
 if distanceCost(p(1:2),pd_proj(1:2))<0.2
     state = 1;
 end
