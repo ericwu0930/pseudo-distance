@@ -80,7 +80,7 @@ hold on
 axis equal
 grid on
 for i = 1:6
-    h = patch(rec1(of(i,:,1),1),rec1(of(i,:,1),2),rec1(of(i,:,1),3),'y')
+    h = patch(rec1(of(i,:,1),1),rec1(of(i,:,1),2),rec1(of(i,:,1),3),'y');
 %     set(h,'facealpha',0.2);
 end
 rec2 = [0.7750,-0.5500,1;
