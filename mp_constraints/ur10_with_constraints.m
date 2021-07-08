@@ -2,6 +2,7 @@
 clear all;
 %% define UR10 and bounding box
 mdl_ur10;
+global ur10;
 % Bounding box size
 bb1 = [0.16/2 -0.13 0.16/2;
     0.16/2  -0.13 -0.16/2;
@@ -65,14 +66,15 @@ bb(:,:,3) = bb3;
 bb(:,:,4) = bb4;
 
 %% define obstacles
-rec1 = [0.9750,0.075,1;
-    0.9750,0.075,0;
-    0.5250,0.075,1;
-    0.5250,0.075,0;
-    0.5250,-0.075,1;
-    0.5250,-0.075,0;
-    0.9750,-0.075,1;
-    0.9750,-0.075,0];
+rec1 = [1.0750,0.075,1;
+    1.0750,0.075,0;
+    0.6250,0.075,1;
+    0.6250,0.075,0;
+    0.6250,-0.075,1;
+    0.6250,-0.075,0;
+    1.0750,-0.075,1;
+    1.0750,-0.075,0];
+
 % obstacles face
 of(:,:,1) = [1,2,8,7;3,4,6,5;1,2,4,3;5,6,8,7;1,3,5,7;2,4,6,8];
 figure
@@ -109,24 +111,35 @@ for i = 1:6
 %     h = patch(rec3(of(i,:,3),1),rec3(of(i,:,3),2),rec3(of(i,:,3),3),'y')
 %     set(h,'facealpha',0.2);
 end
+global obstacles;
 obstacles(:,:,1) = rec1;
 % obstacles(:,:,2) = rec2;
 % obstacles(:,:,3) = rec3;
 
+global qs;
+T = SE3(transl(0.65,0.5,0.5));
+newT = SE3(transl(0.65,-0.5,0.5));
+r = SE3.rpy([0 0 0]);
+ps = T*r;
+qs = [-2.6872   -0.8965    1.2490    1.2183   -1.5708    1.4654];
+global pg;
+pg = newT*r;
+qg = [ 2.2846   -0.8965    1.2490    1.2183   -1.5708    2.4278];
 
 global dc;dc = 3;
 %% atace_plan
 global Tree;
+global dc;dc=6;
 ps = to_end_pose(qs);
 Ns.p = ps;
 Ns.q = qs;
 Ns.parent = nan;
 Tree = [Ns];
 maxFailedAttempts = 10000;
-failedAttempts = 0
+failedAttempts = 0;
 pathFound = false;
 while failedAttempts<=maxFailedAttempts
-    qd = rand(1,n).*ones(1,n)*pi*2;
+    qd = rand(1,dc).*ones(1,dc)*pi*2;
     pd = to_end_pose(qd);
     Nc = nearest_node(pd);
     [s,Nk] = extend_with_constraint(Nc,pd,false);
@@ -193,9 +206,15 @@ function [v,w,pd_proj] = compute_valid_velocity(p,pd)
 %         v = (pdp-p(1:3))/(norm(pdp-p(1:3)));
 pd_proj(1) = pd(1);
 pd_proj(2) = pd(2);
-pd_proj(3) = pd(3);
+pd_proj(3) = 0.5;
+pd_proj = pd_proj(:)';
 v = (pd_proj - p(1:3))/norm(pd_proj-p(1:3));
-w = [0;0;1];
+%rpy = pd(4:6);
+k = 1;
+if rand < 0.5
+    k=-1;
+end
+w = k*[0 0 1];
 end
 
 function [state,p_next] = compute_next_pose(p,v,w,pd_proj)
@@ -203,7 +222,11 @@ state = 0;
 time_interval = 0.1;
 t = p(1:3)+time_interval*v;
 r = SO3.angvec(time_interval,w);
-p_next = [p(1:3)+time_interval*v;r.torpy];
+o_next = r*SO3.rpy(p(4:6));
+rpy = o_next.torpy;
+rpy = rpy(:)';
+p_next = [t(:)',rpy];
+p_next = p_next(:)';
 end
 
 function isCols = check_path(ps,pe)
@@ -223,6 +246,7 @@ isCols = false;
 end
 
 function obj = wrapObj(vertices)
+vertices = vertices(:)';
 obj.XData = vertices(:,1);
 obj.YData = vertices(:,2);
 obj.ZData = vertices(:,3);
@@ -275,12 +299,13 @@ iter = 0;
 while iter<MAX_ATTEMPT
     p_temp = to_end_pose(q_new);
     dd = p_new-p_temp;
-   if dd<1e-2
+   if abs(dd)<1e-2
        return;
    else
        j = get_jacob(q_new);
-       j_inv = j'*inv(j*j');
-       dq = j_inv*dd;
+       j_inv = inv(j);
+       dq = j_inv*dd(:);
+       dq = dq(:)';
        q_new = q_new+dq;
    end
 end
@@ -358,7 +383,11 @@ function p = to_end_pose(q)
 global ur10;
 % input configuration and fkine function to get end-effector pose
 se3 = ur10.fkine(q);
-p = [se3.t;se3.torpy];
+p = [se3.t];
+rpy = se3.torpy;
+rpy = rpy';
+p = [p;rpy];
+p = p(:)'
 end
 
 
